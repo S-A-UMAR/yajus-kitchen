@@ -1,0 +1,71 @@
+{% extends 'kitchen/base.html' %}
+{% load static %}
+
+{% block title %}Yaju's Kitchen - Local Payment Simulator{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mock-checkout-box {
+        max-width: 500px;
+        margin: 80px auto;
+        background-color: var(--bg-white);
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+        border: 2px dashed var(--secondary-orange);
+    }
+    
+    .mock-logo {
+        background-color: rgba(244, 163, 0, 0.1);
+        color: var(--secondary-orange);
+        font-size: 32px;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 24px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mock-checkout-box">
+        <div class="mock-logo">💳</div>
+        
+        <h2 style="font-family: var(--font-heading); font-size:26px; margin-bottom: 8px;">Payment Simulator</h2>
+        <p style="color: var(--text-light); font-size:14px; margin-bottom: 24px;">Verification fallback active because Paystack credentials are not set in `.env`.</p>
+        
+        <div style="background-color: var(--bg-warm); padding: 20px; border-radius: 12px; margin-bottom: 30px; text-align: left;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;">
+                <span style="font-weight:600; color:var(--text-light);">Order ID:</span>
+                <span style="font-weight:700;">#{{ order.id }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;">
+                <span style="font-weight:600; color:var(--text-light);">Customer:</span>
+                <span style="font-weight:700;">{{ order.email }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:16px; border-top:1px dashed var(--border-color); padding-top:12px; margin-top:12px;">
+                <span style="font-weight:700; color:var(--text-dark);">Amount Due:</span>
+                <span style="font-weight:800; color:var(--primary-red);">₦{{ order.total }}</span>
+            </div>
+        </div>
+        
+        <form action="{% url 'mock_checkout' order.id %}" method="post">
+            {% csrf_token %}
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button type="submit" name="action" value="success" class="btn btn-primary" style="width: 100%; padding: 14px; border-radius: 12px; background-color: var(--success);">
+                    Approve Mock Payment
+                </button>
+                <button type="submit" name="action" value="fail" class="btn btn-outline" style="width: 100%; padding: 14px; border-radius: 12px; border-color:#EF4444; color:#EF4444;">
+                    Decline Payment & Cancel
+                </button>
+            </div>
+        </form>
+        
+    </div>
+</div>
+{% endblock %}

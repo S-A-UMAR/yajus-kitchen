@@ -1,0 +1,38 @@
+{% if cart_items %}
+    {% for item in cart_items %}
+        <div class="drawer-item" id="drawer-item-{{ item.id }}">
+            <img class="drawer-item-img" src="{{ item.food.display_image_url }}" alt="{{ item.food.name }}">
+            
+            <div class="drawer-item-info">
+                <div class="drawer-item-title">{{ item.food.name }}</div>
+                
+                {% if item.selected_options.exists %}
+                    <div class="drawer-item-options">
+                        {% for opt in item.selected_options.all %}
+                            {{ opt.name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div class="drawer-item-price">₦{{ item.unit_price }}</div>
+                
+                <div class="drawer-item-actions">
+                    <div class="qty-control">
+                        <button class="qty-btn" onclick="updateDrawerQty({{ item.id }}, {{ item.quantity|add:'-1' }})">-</button>
+                        <span class="qty-value">{{ item.quantity }}</span>
+                        <button class="qty-btn" onclick="updateDrawerQty({{ item.id }}, {{ item.quantity|add:'1' }})">+</button>
+                    </div>
+                    <button class="remove-btn" onclick="removeDrawerItem({{ item.id }})">Remove</button>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div style="text-align: center; padding: 40px 0; color: var(--text-light);">
+        <p style="font-size: 18px; margin-bottom: 16px; font-weight:600;">Your cart is empty!</p>
+        <p>Delicious meals are waiting for you in the menu.</p>
+        <a href="{% url 'menu' %}" class="btn btn-primary" style="margin-top: 20px; padding: 8px 16px; display:inline-block; border-radius:8px;" onclick="toggleCartDrawer(false)">
+            Browse Menu
+        </a>
+    </div>
+{% endif %}

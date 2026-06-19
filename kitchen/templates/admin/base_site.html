@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Yaju's Kitchen Admin{% endblock %}
+
+{% block branding %}
+<a href="{% url 'admin:index' %}" class="yaju-admin-brand" aria-label="Yaju's Kitchen Admin home">
+    <span class="yaju-admin-mark">YK</span>
+    <span>
+        <strong>Yaju's</strong>
+        <em>Kitchen Admin</em>
+    </span>
+</a>
+{% endblock %}
+
+{% block dark-mode-vars %}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/admin-theme.css' %}">
+{% endblock %}

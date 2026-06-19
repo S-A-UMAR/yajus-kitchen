@@ -1,0 +1,58 @@
+{% extends 'kitchen/base.html' %}
+{% load static %}
+
+{% block title %}Yaju's Kitchen - Customer Login{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-card {
+        max-width: 440px;
+        margin: 80px auto;
+        background-color: var(--bg-white);
+        border-radius: 18px;
+        padding: 40px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    @media (max-width: 640px) {
+        .auth-card {
+            margin: 40px auto;
+            padding: 28px 20px;
+            border-radius: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-card">
+        <h2 style="font-family: var(--font-heading); font-size: 28px; text-align: center; margin-bottom: 8px;">Welcome Back</h2>
+        <p style="color: var(--text-light); text-align: center; font-size:14px; margin-bottom: 30px;">Login to order and track your favorite meals.</p>
+        
+        <form action="{% url 'login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}" method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label" for="id_username">Username / Email</label>
+                <input type="text" name="username" id="id_username" class="form-control" placeholder="example@mail.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="id_password">Password</label>
+                <input type="password" name="password" id="id_password" class="form-control" placeholder="••••••••" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; margin-top: 10px;">
+                Sign In to Account
+            </button>
+        </form>
+        
+        <div style="text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-light);">
+            Don't have an account? 
+            <a href="{% url 'register' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}" style="color: var(--primary-red); font-weight: 600;">Sign up now</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

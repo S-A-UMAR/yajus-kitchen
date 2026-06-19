@@ -1,0 +1,432 @@
+{% extends 'kitchen/base.html' %}
+{% load static %}
+
+{% block title %}Yaju's Kitchen - Authentic Premium Nigerian Cuisine{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Home Styling */
+    .hero-section {
+        background: linear-gradient(135deg, rgba(178, 34, 34, 0.04) 0%, rgba(244, 163, 0, 0.04) 100%), var(--bg-white);
+        padding: 100px 0 80px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-container {
+        display: flex;
+        align-items: center;
+        gap: 60px;
+    }
+    
+    .hero-content {
+        flex: 1;
+    }
+    
+    .hero-subtitle {
+        color: var(--secondary-orange);
+        font-weight: 700;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 16px;
+    }
+    
+    .hero-title {
+        font-size: clamp(36px, 6vw, 54px);
+        color: var(--text-dark);
+        margin-bottom: 24px;
+        line-height: 1.15;
+    }
+    
+    .hero-title span {
+        color: var(--primary-red);
+    }
+    
+    .hero-desc {
+        font-size: 18px;
+        color: var(--text-light);
+        margin-bottom: 40px;
+        line-height: 1.7;
+    }
+    
+    .hero-img-box {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        position: relative;
+    }
+    
+    .hero-image {
+        width: 100%;
+        max-width: 480px;
+        height: auto;
+        border-radius: 30px;
+        box-shadow: var(--shadow-lg);
+        transform: rotate(2deg);
+        transition: var(--transition-smooth);
+    }
+    
+    .hero-image:hover {
+        transform: rotate(0deg) scale(1.02);
+    }
+    
+    .hero-badge {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background-color: var(--bg-white);
+        padding: 15px 24px;
+        border-radius: 16px;
+        box-shadow: var(--shadow-md);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        font-family: var(--font-heading);
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .hero-badge span {
+        color: var(--primary-red);
+    }
+    
+    /* Popular section */
+    .section-title-box {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+    
+    .section-title {
+        font-size: 36px;
+        color: var(--text-dark);
+    }
+    
+    .section-subtitle {
+        color: var(--secondary-orange);
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+    
+    .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+    
+    .food-card {
+        background-color: var(--bg-white);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid rgba(0,0,0,0.02);
+        transition: var(--transition-smooth);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .food-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .food-card-img-box {
+        position: relative;
+        height: 200px;
+        background-color: #F9FAFB;
+    }
+    
+    .food-card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .food-card-category {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background-color: var(--bg-white);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--primary-red);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .food-card-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    
+    .food-card-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text-dark);
+    }
+    
+    .food-card-desc {
+        font-size: 13px;
+        color: var(--text-light);
+        margin-bottom: 16px;
+        line-height: 1.5;
+        flex: 1;
+    }
+    
+    .food-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+    }
+    
+    .food-card-price {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--primary-red);
+    }
+    
+    .add-to-cart-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background-color: var(--secondary-orange);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 18px;
+    }
+    
+    .add-to-cart-btn:hover {
+        background-color: var(--primary-red);
+    }
+    
+    /* Banner CTA */
+    .cta-banner {
+        background: linear-gradient(rgba(178, 34, 34, 0.9), rgba(178, 34, 34, 0.9)), url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=1200') no-repeat center center/cover;
+        padding: 80px 0;
+        color: #ffffff;
+        text-align: center;
+        border-radius: 30px;
+        margin: 60px 0;
+    }
+
+    @media (max-width: 900px) {
+        .hero-section {
+            padding: 70px 0 56px;
+        }
+
+        .hero-container {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 38px;
+        }
+
+        .hero-content,
+        .hero-img-box {
+            width: 100%;
+        }
+
+        .hero-image {
+            max-width: 100%;
+            transform: none;
+            border-radius: 20px;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .hero-section {
+            padding: 52px 0 44px;
+        }
+
+        .hero-subtitle {
+            font-size: 13px;
+            letter-spacing: 0.08em;
+        }
+
+        .hero-desc {
+            font-size: 16px;
+            margin-bottom: 28px;
+        }
+
+        .hero-actions .btn {
+            width: 100%;
+        }
+
+        .hero-badge {
+            left: 14px;
+            right: 14px;
+            bottom: 14px;
+            padding: 12px 14px;
+        }
+
+        .menu-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .food-card-img-box {
+            height: 180px;
+        }
+
+        .food-card-footer {
+            gap: 14px;
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .cta-banner {
+            border-radius: 18px;
+            margin: 36px 0;
+            padding: 48px 18px;
+        }
+
+        .cta-banner h2 {
+            font-size: 26px !important;
+        }
+
+        .testimonials-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+    <!-- 1. Hero Section -->
+    <section class="hero-section">
+        <div class="container hero-container">
+            <div class="hero-content">
+                <div class="hero-subtitle">Taste of Nigerian Luxury</div>
+                <h1 class="hero-title">Experience the Finest <span>Nigerian Dishes</span></h1>
+                <p class="hero-desc">Craving authentic Jollof, spicy Grills, or rich, flavorful native Soups? Yaju's Kitchen serves culinary excellence straight to your doorstep. Fast, fresh, and exceptionally premium.</p>
+                <div class="hero-actions">
+                    <a href="{% url 'menu' %}" class="btn btn-primary" style="padding: 14px 32px; font-size:16px;">Order Now</a>
+                    <a href="{% url 'contact' %}" class="btn btn-outline" style="padding: 14px 32px; font-size:16px; border-color:var(--text-dark); color:var(--text-dark);">Contact Us</a>
+                </div>
+            </div>
+            
+            <div class="hero-img-box">
+                <!-- Using Unsplash luxury Nigerian food layout -->
+                <img class="hero-image" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=600" alt="Nigerian Feast">
+                <div class="hero-badge">
+                    <div style="background-color: #FFF3CD; padding: 8px; border-radius: 8px;">🔥</div>
+                    <div>
+                        <div style="font-size:12px; color:var(--text-light);">Hot & Fresh</div>
+                        <div><span>100%</span> Authentic</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Popular Dishes Grid -->
+    <section style="padding: 80px 0 40px;">
+        <div class="container">
+            <div class="section-title-box">
+                <div class="section-subtitle">Chef's Recommendations</div>
+                <h2 class="section-title">Popular Meals</h2>
+            </div>
+            
+            <div class="menu-grid">
+                {% for item in popular_items %}
+                    <div class="food-card">
+                        <div class="food-card-img-box">
+                            <img class="food-card-img" src="{{ item.display_image_url }}" alt="{{ item.name }}">
+                            <div class="food-card-category">{{ item.category.name }}</div>
+                        </div>
+                        
+                        <div class="food-card-content">
+                            <h3 class="food-card-title">{{ item.name }}</h3>
+                            <p class="food-card-desc">{{ item.description|truncatewords:15 }}</p>
+                            
+                            <div class="food-card-footer">
+                                <span class="food-card-price">₦{{ item.base_price }}</span>
+                                <a href="{% url 'menu' %}?search={{ item.name }}" class="add-to-cart-btn">+</a>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div style="grid-column: 1/-1; text-align: center; color: var(--text-light);">
+                        <p>No food items added yet. Click <a href="/admin/kitchen/fooditem/add/" style="color:var(--primary-red); text-decoration:underline;">here</a> to add items in Admin panel!</p>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="{% url 'menu' %}" class="btn btn-outline" style="border-radius:12px; padding: 12px 30px;">Explore Full Menu</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Banner CTA -->
+    <section class="container">
+        <div class="cta-banner">
+            <h2 style="font-size:36px; margin-bottom:16px;">Hosting an Event or Ordering Lunch?</h2>
+            <p style="font-size:18px; margin-bottom:30px; max-width:600px; margin-left:auto; margin-right:auto; line-height:1.6;">Our chefs prepare the finest Nigerian corporate catering packages, party trays, and individual family meals.</p>
+            <a href="{% url 'menu' %}" class="btn btn-secondary" style="padding: 14px 36px; font-size:16px;">Order for Delivery</a>
+        </div>
+    </section>
+
+    <!-- 4. Testimonials -->
+    <section class="testimonials-section" id="reviews">
+        <div class="container">
+            <div class="section-title-box">
+                <div class="section-subtitle">What Our Guests Say</div>
+                <h2 class="section-title">Testimonials</h2>
+            </div>
+            
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <p style="font-style:italic; line-height:1.7;">"Yaju's Jollof Rice is the absolute best in town! Smells premium and taste exactly like the smoky party Jollof. The delivery was super fast too, the food arrived steaming hot."</p>
+                    <div class="testimonial-user">
+                        <img class="testimonial-avatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100" alt="Adeola">
+                        <div>
+                            <div style="font-weight:700;">Adeola K.</div>
+                            <div style="font-size:12px; color:var(--text-light);">Lagos Mainland</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <p style="font-style:italic; line-height:1.7;">"The customized soup options are amazing. I could request extra cowskin and beef toppings. Extremely clean packaging, and the Paystack checkouts were completely seamless!"</p>
+                    <div class="testimonial-user">
+                        <img class="testimonial-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100" alt="Chinedu">
+                        <div>
+                            <div style="font-weight:700;">Chinelo O.</div>
+                            <div style="font-size:12px; color:var(--text-light);">Lekki Phase 1</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <p style="font-style:italic; line-height:1.7;">"Premium service indeed. They have customer accounts so reordering my favorite swallows and soups takes me less than 10 seconds. Highly recommend Yaju's Kitchen!"</p>
+                    <div class="testimonial-user">
+                        <img class="testimonial-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100" alt="Tunde">
+                        <div>
+                            <div style="font-weight:700;">Tunde A.</div>
+                            <div style="font-size:12px; color:var(--text-light);">Ikeja GRA</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+{% endblock %}

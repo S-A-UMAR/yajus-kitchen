@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Grill placeholder</title>
+  <desc id="desc">Illustrated placeholder for grilled meals.</desc>
+  <rect width="900" height="540" fill="#fff1f2"/>
+  <circle cx="450" cy="270" r="170" fill="#b22222" opacity=".12"/>
+  <ellipse cx="450" cy="336" rx="238" ry="58" fill="#7c2d12"/>
+  <rect x="302" y="243" width="292" height="48" rx="24" fill="#9a3412" transform="rotate(-8 448 267)"/>
+  <rect x="335" y="304" width="238" height="42" rx="21" fill="#b45309" transform="rotate(7 454 325)"/>
+  <path d="M330 265h248M356 324h190" stroke="#451a03" stroke-width="8" stroke-linecap="round" opacity=".45"/>
+  <circle cx="610" cy="230" r="12" fill="#ef4444"/>
+  <circle cx="282" cy="306" r="12" fill="#22c55e"/>
+  <text x="450" y="454" text-anchor="middle" fill="#7f1d1d" font-family="Arial, sans-serif" font-size="34" font-weight="700">Grills</text>
+</svg>

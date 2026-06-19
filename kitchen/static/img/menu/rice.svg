@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Rice dish placeholder</title>
+  <desc id="desc">Illustrated placeholder for rice meals.</desc>
+  <rect width="900" height="540" fill="#fff4d7"/>
+  <circle cx="450" cy="282" r="160" fill="#b22222" opacity=".12"/>
+  <ellipse cx="450" cy="330" rx="235" ry="64" fill="#d6a15d"/>
+  <ellipse cx="450" cy="304" rx="205" ry="92" fill="#f8fafc"/>
+  <circle cx="368" cy="274" r="12" fill="#ef4444"/>
+  <circle cx="420" cy="245" r="10" fill="#22c55e"/>
+  <circle cx="507" cy="267" r="13" fill="#f97316"/>
+  <circle cx="552" cy="306" r="10" fill="#22c55e"/>
+  <path d="M295 326c80 44 230 54 319 0" fill="none" stroke="#8b5e34" stroke-width="18" stroke-linecap="round" opacity=".28"/>
+  <text x="450" y="454" text-anchor="middle" fill="#7f1d1d" font-family="Arial, sans-serif" font-size="34" font-weight="700">Rice</text>
+</svg>

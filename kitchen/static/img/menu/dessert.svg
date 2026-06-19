@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Dessert placeholder</title>
+  <desc id="desc">Illustrated placeholder for desserts.</desc>
+  <rect width="900" height="540" fill="#fff7ed"/>
+  <circle cx="450" cy="270" r="170" fill="#f4a300" opacity=".15"/>
+  <ellipse cx="450" cy="350" rx="230" ry="55" fill="#d97706"/>
+  <circle cx="350" cy="286" r="56" fill="#fbbf24"/>
+  <circle cx="449" cy="260" r="62" fill="#f59e0b"/>
+  <circle cx="555" cy="290" r="54" fill="#fbbf24"/>
+  <path d="M328 301c20 23 52 28 78 8M426 270c25 24 67 22 93-2M533 304c20 20 50 20 72 0" fill="none" stroke="#92400e" stroke-width="10" stroke-linecap="round" opacity=".35"/>
+  <text x="450" y="454" text-anchor="middle" fill="#92400e" font-family="Arial, sans-serif" font-size="34" font-weight="700">Desserts</text>
+</svg>

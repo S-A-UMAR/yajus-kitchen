@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Soup placeholder</title>
+  <desc id="desc">Illustrated placeholder for Nigerian soups.</desc>
+  <rect width="900" height="540" fill="#fff7ed"/>
+  <circle cx="450" cy="270" r="170" fill="#f97316" opacity=".13"/>
+  <ellipse cx="450" cy="330" rx="238" ry="62" fill="#b45309"/>
+  <ellipse cx="450" cy="286" rx="206" ry="108" fill="#166534"/>
+  <circle cx="365" cy="268" r="18" fill="#dc2626"/>
+  <circle cx="444" cy="224" r="14" fill="#fde68a"/>
+  <circle cx="527" cy="286" r="19" fill="#92400e"/>
+  <path d="M333 319c70 35 163 41 238 0" fill="none" stroke="#bbf7d0" stroke-width="13" stroke-linecap="round" opacity=".45"/>
+  <text x="450" y="454" text-anchor="middle" fill="#7c2d12" font-family="Arial, sans-serif" font-size="34" font-weight="700">Soup</text>
+</svg>

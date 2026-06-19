@@ -1,0 +1,230 @@
+{% extends 'kitchen/base.html' %}
+{% load static %}
+
+{% block title %}Yaju's Kitchen - Track Order #{{ order.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Tracking Timeline CSS */
+    .tracking-box {
+        max-width: 600px;
+        margin: 60px auto 80px;
+        background-color: var(--bg-white);
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .tracking-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .timeline {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        padding-left: 40px;
+        list-style: none;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 10px;
+        bottom: 10px;
+        width: 4px;
+        background-color: var(--border-color);
+        z-index: 1;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 40px;
+    }
+    
+    .timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -35px;
+        top: 4px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: var(--border-color);
+        border: 4px solid var(--bg-white);
+        box-shadow: 0 0 0 4px var(--border-color);
+        z-index: 2;
+        transition: var(--transition-smooth);
+    }
+    
+    .timeline-content {
+        transition: var(--transition-smooth);
+    }
+    
+    .timeline-title {
+        font-family: var(--font-heading);
+        font-size: 16px;
+        font-weight: 700;
+        color: #9CA3AF;
+        margin-bottom: 4px;
+    }
+    
+    .timeline-desc {
+        font-size: 13px;
+        color: #9CA3AF;
+    }
+    
+    /* Active & Completed States */
+    .timeline-item.completed .timeline-marker {
+        background-color: var(--success);
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+    }
+    
+    .timeline-item.completed .timeline-title {
+        color: var(--text-dark);
+    }
+    
+    .timeline-item.completed .timeline-desc {
+        color: var(--text-light);
+    }
+    
+    .timeline-item.active .timeline-marker {
+        background-color: var(--primary-red);
+        box-shadow: 0 0 0 6px rgba(178, 34, 34, 0.2);
+        animation: pulseMarker 1.5s infinite;
+    }
+    
+    .timeline-item.active .timeline-title {
+        color: var(--primary-red);
+        font-size: 18px;
+    }
+    
+    .timeline-item.active .timeline-desc {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+    
+    @keyframes pulseMarker {
+        0% { box-shadow: 0 0 0 0px rgba(178, 34, 34, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(178, 34, 34, 0); }
+        100% { box-shadow: 0 0 0 0px rgba(178, 34, 34, 0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="tracking-box">
+        
+        <div class="tracking-header">
+            <h1 style="font-family: var(--font-heading); font-size:28px; margin-bottom: 8px;">Order Live Tracking</h1>
+            <p style="color: var(--text-light);">Order #{{ order.id }} &bull; Value: ₦{{ order.total }}</p>
+            
+            {% if order.status == 'cancelled' %}
+                <div style="background-color: #FEE2E2; border: 1px solid #FCA5A5; color: #991B1B; padding: 12px; border-radius: 12px; margin-top: 20px; font-weight:700;">
+                    This order has been Cancelled.
+                </div>
+            {% endif %}
+        </div>
+        
+        <ul class="timeline" id="tracking-timeline">
+            <!-- Received State -->
+            <li class="timeline-item" id="step-received">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <h3 class="timeline-title">Order Received</h3>
+                    <p class="timeline-desc">We have received your payment and our kitchen staff is reviewing the order.</p>
+                </div>
+            </li>
+            
+            <!-- Preparing State -->
+            <li class="timeline-item" id="step-preparing">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <h3 class="timeline-title">Preparing Meal</h3>
+                    <p class="timeline-desc">Our master chefs are assembling and preparing your custom Nigerian delicacies.</p>
+                </div>
+            </li>
+            
+            <!-- Out for Delivery State -->
+            <li class="timeline-item" id="step-out_for_delivery">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <h3 class="timeline-title">Out for Delivery</h3>
+                    <p class="timeline-desc">The dispatcher has picked up your food box and is speeding to your address.</p>
+                </div>
+            </li>
+            
+            <!-- Delivered State -->
+            <li class="timeline-item" id="step-delivered">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <h3 class="timeline-title">Delivered</h3>
+                    <p class="timeline-desc">Food box delivered safely. Enjoy your premium Nigerian dining experience!</p>
+                </div>
+            </li>
+        </ul>
+        
+        <div style="margin-top: 40px; border-top: 1px solid var(--border-color); padding-top: 24px; text-align: center;">
+            <p style="font-size:13px; color:var(--text-light); margin-bottom: 20px;">This page automatically updates in real-time. Do not close this window.</p>
+            <a href="{% url 'menu' %}" class="btn btn-outline" style="border-radius:12px; padding: 10px 24px;">Return to Menu</a>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const orderId = "{{ order.id }}";
+    
+    // Map status strings to list item element IDs in order
+    const statusWorkflow = ['received', 'preparing', 'out_for_delivery', 'delivered'];
+    
+    function updateTrackingUI(currentStatus) {
+        if (currentStatus === 'cancelled') {
+            return; // Handled separately via static banner
+        }
+        
+        const currentIndex = statusWorkflow.indexOf(currentStatus);
+        
+        statusWorkflow.forEach((status, index) => {
+            const el = document.getElementById(`step-${status}`);
+            if (!el) return;
+            
+            // Reset classes
+            el.classList.remove('active', 'completed');
+            
+            if (index < currentIndex) {
+                el.classList.add('completed');
+            } else if (index === currentIndex) {
+                el.classList.add('active');
+            }
+        });
+    }
+
+    // Run initial UI state setup
+    updateTrackingUI("{{ order.status }}");
+    
+    // Polling API every 5 seconds for real-time operation changes
+    setInterval(() => {
+        fetch(`/order/${orderId}/status/`)
+        .then(res => res.json())
+        .then(data => {
+            updateTrackingUI(data.status);
+            if (data.status === 'delivered' || data.status === 'cancelled') {
+                // Stop page updates once order finishes
+                // (Optionally reload to render delivered changes or banners)
+                if (data.status === 'delivered') {
+                    showNotification("Your food has been delivered! Enjoy your meal.", "success");
+                }
+            }
+        });
+    }, 5000);
+</script>
+{% endblock %}

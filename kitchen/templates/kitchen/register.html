@@ -1,0 +1,87 @@
+{% extends 'kitchen/base.html' %}
+{% load static %}
+
+{% block title %}Yaju's Kitchen - Create Customer Account{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-card {
+        max-width: 440px;
+        margin: 80px auto;
+        background-color: var(--bg-white);
+        border-radius: 18px;
+        padding: 40px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+    
+    .auth-form ul {
+        list-style: none;
+        font-size: 12px;
+        color: var(--text-light);
+        margin: 8px 0 16px;
+        padding-left: 4px;
+    }
+    
+    .auth-form ul li {
+        margin-bottom: 4px;
+    }
+
+    .auth-help {
+        font-size: 12px;
+        color: #6B7280;
+        margin-top: 7px;
+        line-height: 1.45;
+    }
+
+    .auth-errors {
+        color: var(--primary-red);
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 7px;
+    }
+
+    @media (max-width: 640px) {
+        .auth-card {
+            margin: 40px auto;
+            padding: 28px 20px;
+            border-radius: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-card">
+        <h2 style="font-family: var(--font-heading); font-size: 28px; text-align: center; margin-bottom: 8px;">Create Account</h2>
+        <p style="color: var(--text-light); text-align: center; font-size:14px; margin-bottom: 30px;">Sign up to get discounts, save addresses, and reorder easily.</p>
+        
+        <form action="{% url 'register' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}" method="post" class="auth-form">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div class="form-group">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="form-control" placeholder="Enter {{ field.label|lower }}" required>
+                    {% if field.errors %}
+                        <div class="auth-errors">{{ field.errors }}</div>
+                    {% endif %}
+                    {% if field.help_text %}
+                        <div class="auth-help">{{ field.help_text|safe }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; margin-top: 10px;">
+                Register Account
+            </button>
+        </form>
+        
+        <div style="text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-light);">
+            Already have an account? 
+            <a href="{% url 'login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}" style="color: var(--primary-red); font-weight: 600;">Log in here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

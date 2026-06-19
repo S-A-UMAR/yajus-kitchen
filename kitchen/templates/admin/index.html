@@ -1,0 +1,130 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="yaju-dashboard">
+    <section class="yaju-dashboard-hero">
+        <div>
+            <p class="yaju-eyebrow">Restaurant Operations</p>
+            <h1>{{ title }}</h1>
+            <p class="yaju-hero-copy">Manage menu items, orders, carts, reviews, users, and sales analytics from one focused workspace.</p>
+        </div>
+        <div class="yaju-hero-actions">
+            <a href="{% url 'home' %}" class="yaju-action yaju-action-light">View Website</a>
+            <a href="{% url 'menu' %}" class="yaju-action yaju-action-gold">Open Menu</a>
+        </div>
+    </section>
+
+    <section class="yaju-quick-grid" aria-label="Quick admin actions">
+        <a href="{% url 'admin:kitchen_fooditem_changelist' %}" class="yaju-stat-card">
+            <span class="yaju-stat-icon">MI</span>
+            <span class="yaju-stat-label">Menu</span>
+            <strong>Food Items</strong>
+        </a>
+        <a href="{% url 'admin:kitchen_order_changelist' %}" class="yaju-stat-card">
+            <span class="yaju-stat-icon">OR</span>
+            <span class="yaju-stat-label">Fulfillment</span>
+            <strong>Orders</strong>
+        </a>
+        <a href="{% url 'admin:kitchen_orderanalytics_changelist' %}" class="yaju-stat-card">
+            <span class="yaju-stat-icon">AN</span>
+            <span class="yaju-stat-label">Performance</span>
+            <strong>Analytics</strong>
+        </a>
+        <a href="{% url 'admin:kitchen_review_changelist' %}" class="yaju-stat-card">
+            <span class="yaju-stat-icon">RV</span>
+            <span class="yaju-stat-label">Guests</span>
+            <strong>Reviews</strong>
+        </a>
+    </section>
+
+    <div class="yaju-dashboard-grid">
+        <section class="yaju-panel yaju-apps-panel">
+            <div class="yaju-section-heading">
+                <div>
+                    <p class="yaju-eyebrow">Workspace</p>
+                    <h2>Management Areas</h2>
+                </div>
+            </div>
+
+            {% if app_list %}
+                <div class="yaju-app-list">
+                    {% for app in app_list %}
+                        <article class="yaju-app-card app-{{ app.app_label }}">
+                            <header class="yaju-app-card-header">
+                                <div>
+                                    <span class="yaju-app-kicker">{{ app.name }}</span>
+                                    <h3>{{ app.name }}</h3>
+                                </div>
+                            </header>
+                            <div class="yaju-model-list">
+                                {% for model in app.models %}
+                                    <div class="yaju-model-row">
+                                        {% if model.admin_url %}
+                                            <a href="{{ model.admin_url }}" class="yaju-model-name">{{ model.name }}</a>
+                                        {% else %}
+                                            <span class="yaju-model-name">{{ model.name }}</span>
+                                        {% endif %}
+                                        <div class="yaju-model-actions">
+                                            {% if model.add_url %}
+                                                <a href="{{ model.add_url }}" class="yaju-mini-action yaju-mini-add">{% translate "Add" %}</a>
+                                            {% endif %}
+                                            {% if model.admin_url and model.view_only %}
+                                                <a href="{{ model.admin_url }}" class="yaju-mini-action">{% translate "View" %}</a>
+                                            {% elif model.admin_url %}
+                                                <a href="{{ model.admin_url }}" class="yaju-mini-action">{% translate "Manage" %}</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="yaju-empty-state">
+                    <h3>{% translate "No admin permissions available" %}</h3>
+                    <p>{% translate "Your account does not currently have access to any admin modules." %}</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <aside class="yaju-panel yaju-recent-panel">
+            <div class="yaju-section-heading">
+                <div>
+                    <p class="yaju-eyebrow">Activity</p>
+                    <h2>{% translate "Recent Actions" %}</h2>
+                </div>
+            </div>
+            {% load log %}
+            {% get_admin_log 8 as admin_log for_user user %}
+            {% if not admin_log %}
+                <div class="yaju-empty-state yaju-empty-compact">
+                    <h3>{% translate "No actions yet" %}</h3>
+                    <p>{% translate "Admin changes will appear here as your team works." %}</p>
+                </div>
+            {% else %}
+                <ol class="yaju-activity-list">
+                    {% for entry in admin_log %}
+                        <li class="yaju-activity-item">
+                            <span class="yaju-activity-dot {% if entry.is_addition %}is-add{% elif entry.is_change %}is-change{% elif entry.is_deletion %}is-delete{% endif %}"></span>
+                            <div>
+                                <p>
+                                    {% if entry.is_deletion or not entry.get_admin_url %}
+                                        {{ entry.object_repr }}
+                                    {% else %}
+                                        <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                                    {% endif %}
+                                </p>
+                                <span>{{ entry.content_type|capfirst }} · {{ entry.action_time|date:"M j, H:i" }}</span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ol>
+            {% endif %}
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block sidebar %}{% endblock %}

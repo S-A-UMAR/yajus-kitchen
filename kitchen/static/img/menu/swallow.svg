@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Swallow placeholder</title>
+  <desc id="desc">Illustrated placeholder for swallow dishes.</desc>
+  <rect width="900" height="540" fill="#f8fafc"/>
+  <circle cx="450" cy="270" r="170" fill="#f4a300" opacity=".16"/>
+  <ellipse cx="450" cy="336" rx="230" ry="58" fill="#d6a15d"/>
+  <circle cx="402" cy="271" r="88" fill="#fff7ed"/>
+  <circle cx="502" cy="286" r="94" fill="#fffbeb"/>
+  <path d="M340 335c74 34 167 38 236 0" fill="none" stroke="#92400e" stroke-width="14" stroke-linecap="round" opacity=".18"/>
+  <text x="450" y="454" text-anchor="middle" fill="#92400e" font-family="Arial, sans-serif" font-size="34" font-weight="700">Swallow</text>
+</svg>

@@ -1,0 +1,236 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Yaju's Kitchen - Premium Nigerian Cuisine{% endblock %}</title>
+    <!-- Base CSS Stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Notification Messages -->
+    <div class="messages-container" id="messages-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <span>{{ message }}</span>
+                    <span class="alert-close" onclick="this.parentElement.remove()">&times;</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Header & Navigation -->
+    <header>
+        <div class="container navbar" id="site-navbar">
+            <a href="{% url 'home' %}" class="logo">
+                YAJU'S <span>KITCHEN</span>
+            </a>
+
+            <button class="mobile-menu-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="primary-navigation" onclick="toggleMobileNav()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4" x2="20" y1="6" y2="6"></line>
+                    <line x1="4" x2="20" y1="12" y2="12"></line>
+                    <line x1="4" x2="20" y1="18" y2="18"></line>
+                </svg>
+            </button>
+            
+            <nav id="primary-navigation">
+                <ul class="nav-links">
+                    <li><a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a></li>
+                    <li><a href="{% url 'menu' %}" class="nav-link {% if request.resolver_match.url_name == 'menu' %}active{% endif %}">Menu</a></li>
+                    <li><a href="{% url 'contact' %}" class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a></li>
+                        {% if user.is_staff %}
+                            <li><a href="/admin/" class="nav-link" target="_blank">Admin Control</a></li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+            </nav>
+            
+            <div class="nav-actions">
+                {% if user.is_authenticated %}
+                    <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-link" style="font-weight:600; cursor:pointer;">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="nav-link" style="font-weight:600;">Login</a>
+                    <a href="{% url 'register' %}" class="btn btn-primary" style="padding: 8px 16px; font-size:14px; border-radius:8px;">Sign Up</a>
+                {% endif %}
+                
+                <!-- Dynamic Cart Trigger -->
+                <button class="cart-trigger-btn" id="cart-drawer-trigger" onclick="toggleCartDrawer(true)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span class="badge-count" id="global-cart-count">{{ cart_total_qty }}</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Global Slide-in Cart Drawer -->
+    <div class="cart-drawer-overlay" id="cart-drawer-overlay" onclick="toggleCartDrawer(false)"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="cart-drawer-header">
+            <h3 style="font-family: var(--font-heading); font-size:20px;">My Cart Drawer</h3>
+            <button class="cart-drawer-close" onclick="toggleCartDrawer(false)">&times;</button>
+        </div>
+        
+        <div class="cart-drawer-content" id="cart-drawer-items-list">
+            <!-- Included Cart Items Partial -->
+            {% include 'kitchen/partials/cart_drawer.html' %}
+        </div>
+        
+        <div class="cart-drawer-footer">
+            <div class="cart-summary-row">
+                <span>Subtotal:</span>
+                <span id="drawer-total-price">₦{{ cart_total_price|default:"0.00" }}</span>
+            </div>
+            <a href="{% url 'checkout' %}" class="btn btn-primary" style="width: 100%; border-radius:12px; display: block; text-align: center; padding: 14px;">
+                Proceed to Checkout
+            </a>
+            <a href="{% url 'cart' %}" style="display: block; text-align: center; margin-top: 12px; font-size:14px; font-weight:600; color: var(--primary-red);">
+                View Full Cart Page
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-grid">
+            <div>
+                <h4 class="footer-title" style="color:var(--primary-red);">YAJU'S <span>KITCHEN</span></h4>
+                <p style="margin-top: 10px; line-height: 1.8;">Serving premium, authentic Nigerian meals crafted with love and luxury spices. Experience culinary heritage in every single bite.</p>
+            </div>
+            <div>
+                <h4 class="footer-title">Quick Links</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'menu' %}">Order Menu</a></li>
+                    <li><a href="{% url 'contact' %}">Contact & Support</a></li>
+                    <li><a href="{% url 'home' %}#reviews">Testimonials</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="footer-title">Hours</h4>
+                <p>Monday - Saturday: 9:00 AM - 10:00 PM</p>
+                <p style="margin-top: 8px;">Sunday: 12:00 PM - 9:00 PM</p>
+            </div>
+            <div>
+                <h4 class="footer-title">Contact</h4>
+                <p>📍 Victoria Island, Lagos, Nigeria</p>
+                <p style="margin-top: 8px;">📞 +234 812 345 6789</p>
+                <p style="margin-top: 8px;">✉️ support@yajuskitchen.com</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; {% now "Y" %} Yaju's Kitchen. All rights reserved. Designed for Premium Experiences.</p>
+        </div>
+    </footer>
+
+    <!-- Global Javascript Helpers -->
+    <script>
+        function toggleCartDrawer(open) {
+            const drawer = document.getElementById('cart-drawer');
+            const overlay = document.getElementById('cart-drawer-overlay');
+            if (open) {
+                drawer.classList.add('open');
+                overlay.classList.add('open');
+            } else {
+                drawer.classList.remove('open');
+                overlay.classList.remove('open');
+            }
+        }
+
+        function toggleMobileNav() {
+            const navbar = document.getElementById('site-navbar');
+            const toggle = navbar.querySelector('.mobile-menu-toggle');
+            const isOpen = navbar.classList.toggle('nav-open');
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+
+        // Global function to trigger popups/toasts
+        function showNotification(text, type = 'success') {
+            const container = document.getElementById('messages-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <span>${text}</span>
+                <span class="alert-close" onclick="this.parentElement.remove()">&times;</span>
+            `;
+            container.appendChild(alert);
+            
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            }, 4000);
+        }
+
+        // Global functions to handle quantity adjustments inside drawer via AJAX
+        function updateDrawerQty(itemId, newQty) {
+            const csrftoken = '{{ csrf_token }}';
+            const formData = new FormData();
+            formData.append('quantity', newQty);
+            
+            fetch(`/cart/update/${itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh drawer partial
+                    refreshDrawerContent();
+                    // Update header counts and summary total
+                    document.getElementById('global-cart-count').innerText = data.cart_qty;
+                    document.getElementById('drawer-total-price').innerText = '₦' + data.cart_total.toFixed(2);
+                }
+            });
+        }
+
+        function removeDrawerItem(itemId) {
+            const csrftoken = '{{ csrf_token }}';
+            fetch(`/cart/remove/${itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    refreshDrawerContent();
+                    document.getElementById('global-cart-count').innerText = data.cart_qty;
+                    document.getElementById('drawer-total-price').innerText = '₦' + data.cart_total.toFixed(2);
+                    showNotification("Item removed from cart", "info");
+                }
+            });
+        }
+
+        function refreshDrawerContent() {
+            fetch("{% url 'cart_drawer_partial' %}")
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('cart-drawer-items-list').innerHTML = html;
+            });
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

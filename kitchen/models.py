@@ -1,0 +1,205 @@
+from decimal import Decimal
+from pathlib import Path
+from urllib.parse import quote
+from django.db import models
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    phone = models.CharField(max_length=15, blank=True)
+    address = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
+    else:
+        Profile.objects.create(user=instance)
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    
+    class Meta:
+        verbose_name_plural = "Categories"
+
+    def __str__(self):
+        return self.name
+
+
+class FoodItem(models.Model):
+    name = models.CharField(max_length=150)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='items')
+    description = models.TextField()
+    base_price = models.DecimalField(max_digits=10, decimal_places=2)
+    image = models.ImageField(upload_to='menu/', blank=True, null=True)
+    is_available = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def display_image_url(self):
+        if self.image:
+            return self.image.url
+
+        static_menu_dir = Path(settings.BASE_DIR) / 'kitchen' / 'static' / 'img' / 'menu'
+        for extension in ('jpeg', 'jpg', 'png', 'webp'):
+            image_name = f"{self.name}.{extension}"
+            if (static_menu_dir / image_name).exists():
+                return f"/static/img/menu/{quote(image_name)}"
+
+        category_key = (self.category.name or '').strip().lower().replace(' ', '-')
+        placeholders = {
+            'rice': 'rice.svg',
+            'soups': 'soup.svg',
+            'soup': 'soup.svg',
+            'swallow': 'swallow.svg',
+            'grills': 'grill.svg',
+            'grill': 'grill.svg',
+            'drinks': 'drink.svg',
+            'drink': 'drink.svg',
+            'desserts': 'dessert.svg',
+            'dessert': 'dessert.svg',
+        }
+        return f"/static/img/menu/{placeholders.get(category_key, 'meal.svg')}"
+
+
+class OptionGroup(models.Model):
+    name = models.CharField(max_length=100) # e.g. "Toppings", "Spice Level"
+    
+    def __str__(self):
+        return self.name
+
+
+class OptionChoice(models.Model):
+    group = models.ForeignKey(OptionGroup, on_delete=models.CASCADE, related_name='choices')
+    name = models.CharField(max_length=100) # e.g. "Extra Beef", "Mild", "Hot"
+    price_delta = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    def __str__(self):
+        if self.price_delta > 0:
+            return f"{self.name} (+₦{self.price_delta})"
+        return self.name
+
+
+class FoodItemOption(models.Model):
+    food = models.ForeignKey(FoodItem, on_delete=models.CASCADE, related_name='options')
+    group = models.ForeignKey(OptionGroup, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('food', 'group')
+
+    def __str__(self):
+        return f"{self.food.name} - {self.group.name}"
+
+
+class Cart(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='carts')
+    session_key = models.CharField(max_length=40, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        if self.user:
+            return f"Cart of {self.user.username}"
+        return f"Guest Cart ({self.session_key})"
+
+    @property
+    def total_price(self):
+        return sum(item.total_price for item in self.items.all())
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    food = models.ForeignKey(FoodItem, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    selected_options = models.ManyToManyField(OptionChoice, blank=True)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.food.name} in Cart"
+
+    @property
+    def unit_price(self):
+        # Base price + sum of price deltas of selected options
+        # Explicitly cast to Decimal to handle SQLite returning floats in tests
+        option_deltas = sum(
+            (Decimal(str(option.price_delta)) for option in self.selected_options.all()),
+            Decimal('0.00')
+        )
+        return Decimal(str(self.food.base_price)) + option_deltas
+
+    @property
+    def total_price(self):
+        return self.unit_price * self.quantity
+
+
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ('received', 'Received'),
+        ('preparing', 'Preparing'),
+        ('out_for_delivery', 'Out for Delivery'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled')
+    ]
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    delivery_address = models.TextField()
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='received')
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    is_guest = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Order #{self.id} ({self.status})"
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    food = models.ForeignKey(FoodItem, on_delete=models.SET_NULL, null=True)
+    food_name = models.CharField(max_length=150) # Backup in case food is deleted
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2) # Snapshotted price
+    options_summary = models.TextField(blank=True) # Snapshotted list of options, e.g. "Extra Beef (+₦500.00), Mild"
+
+    def __str__(self):
+        return f"{self.quantity} x {self.food_name} in Order #{self.order.id}"
+
+    @property
+    def total_price(self):
+        return self.unit_price * self.quantity
+
+
+class Payment(models.Model):
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='payment')
+    provider = models.CharField(max_length=50, default='Paystack')
+    status = models.CharField(max_length=25, default='pending') # pending, success, failed
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    reference = models.CharField(max_length=150, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Payment for Order #{self.order.id} ({self.status})"
+
+
+class Review(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    food = models.ForeignKey(FoodItem, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.PositiveSmallIntegerField() # 1 to 5
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Review by {self.user.username} on {self.food.name} ({self.rating} stars)"

@@ -1,0 +1,476 @@
+{% extends 'kitchen/base.html' %}
+{% load static %}
+
+{% block title %}Yaju's Kitchen - Restaurant Menu{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Menu Styles */
+    .menu-header-bar {
+        background-color: var(--bg-white);
+        padding: 30px 0;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 40px;
+    }
+    
+    .menu-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .category-pills {
+        display: flex;
+        gap: 12px;
+        list-style: none;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        scrollbar-width: none;
+        max-width: 100%;
+    }
+
+    .category-pills::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .category-pill {
+        padding: 10px 20px;
+        background-color: var(--bg-warm);
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-light);
+        white-space: nowrap;
+    }
+    
+    .category-pill.active {
+        background-color: var(--primary-red);
+        color: var(--bg-white);
+    }
+
+    .category-pill:not(.active):hover {
+        background-color: rgba(178, 34, 34, 0.08);
+        color: var(--primary-red);
+    }
+    
+    .search-box {
+        position: relative;
+        width: 320px;
+        max-width: 100%;
+        flex-shrink: 0;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 12px 20px;
+        padding-left: 45px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-warm);
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9CA3AF;
+    }
+    
+    /* Food Items grid */
+    .menu-page-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 80px;
+    }
+    
+    /* Customizer Custom Styling inside Modal */
+    .customizer-food-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+    }
+    
+    .customizer-food-desc {
+        font-size: 14px;
+        color: var(--text-light);
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    
+    .option-group-box {
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #F3F4F6;
+    }
+    
+    .option-group-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .option-group-title span {
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        color: var(--secondary-orange);
+        background-color: rgba(244, 163, 0, 0.1);
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+    
+    .choice-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        cursor: pointer;
+    }
+    
+    .choice-label-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        font-weight: 500;
+    }
+    
+    .choice-price {
+        font-weight: 600;
+        color: var(--text-light);
+    }
+    
+    .choice-input {
+        accent-color: var(--primary-red);
+        width: 18px;
+        height: 18px;
+    }
+
+    @media (max-width: 900px) {
+        .menu-controls {
+            align-items: stretch;
+        }
+
+        .category-pills {
+            width: 100%;
+        }
+
+        .search-box {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .menu-header-bar {
+            padding: 22px 0;
+            margin-bottom: 28px;
+        }
+
+        .menu-page-grid {
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-bottom: 56px;
+        }
+
+        .food-card-img-box {
+            height: 180px;
+        }
+
+        .food-card-footer {
+            align-items: stretch;
+            gap: 12px;
+            flex-direction: column;
+        }
+
+        .food-card-footer .btn {
+            width: 100%;
+        }
+
+        .choice-row {
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .choice-label-box {
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+    <!-- 1. Header controls -->
+    <div class="menu-header-bar">
+        <div class="container menu-controls">
+            <ul class="category-pills">
+                <li>
+                    <a href="{% url 'menu' %}" class="category-pill {% if not selected_category_id %}active{% endif %}">
+                        All Items
+                    </a>
+                </li>
+                {% for cat in categories %}
+                    <li>
+                        <a href="{% url 'menu' %}?category={{ cat.id }}" class="category-pill {% if selected_category_id == cat.id %}active{% endif %}">
+                            {{ cat.name }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+            
+            <form action="{% url 'menu' %}" method="get" class="search-box">
+                {% if selected_category_id %}
+                    <input type="hidden" name="category" value="{{ selected_category_id }}">
+                {% endif %}
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" name="search" class="search-input" placeholder="Search menu meals..." value="{{ search_query }}">
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Menu Items List -->
+    <section class="container">
+        <div class="menu-page-grid">
+            {% for item in food_items %}
+                <div class="food-card">
+                    <div class="food-card-img-box">
+                        <img class="food-card-img" src="{{ item.display_image_url }}" alt="{{ item.name }}">
+                        <div class="food-card-category">{{ item.category.name }}</div>
+                    </div>
+                    
+                    <div class="food-card-content">
+                        <h3 class="food-card-title">{{ item.name }}</h3>
+                        <p class="food-card-desc">{{ item.description }}</p>
+                        
+                        <div class="food-card-footer">
+                            <span class="food-card-price">₦{{ item.base_price }}</span>
+                            <button onclick="openCustomizer({{ item.id }})" class="btn btn-primary" style="padding: 6px 16px; font-size: 13px; border-radius: 8px;">
+                                Customize & Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 60px 0; color: var(--text-light);">
+                    <p style="font-size: 18px; font-weight:600; margin-bottom:10px;">No meals matched your selection.</p>
+                    <p>Try changing your category filters or search inputs.</p>
+                    <a href="{% url 'menu' %}" class="btn btn-outline" style="margin-top: 20px; border-radius: 8px;">Clear Filters</a>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- 3. Food Customizer Dialog Modal -->
+    <div class="modal-overlay" id="customizer-modal-overlay">
+        <div class="modal-content" id="customizer-modal-content">
+            <button class="modal-close-btn" onclick="closeCustomizer()">&times;</button>
+            
+            <form id="customizer-form" onsubmit="submitCustomizer(event)">
+                {% csrf_token %}
+                <input type="hidden" name="food_id" id="customizer-food-id">
+                
+                <!-- Inner dynamic content loaded via AJAX detail view -->
+                <div id="customizer-modal-loader" style="text-align: center; padding: 40px 0;">
+                    <p style="color: var(--text-light);">Loading dish configuration...</p>
+                </div>
+                
+                <div id="customizer-modal-body" style="display: none;">
+                    <!-- Dish Header -->
+                    <h2 class="customizer-food-title" id="m-food-title">Food Title</h2>
+                    <p class="customizer-food-desc" id="m-food-desc">Food description...</p>
+                    
+                    <!-- Dynamic Option Groups -->
+                    <div id="m-option-groups-container">
+                        <!-- Loaded options will inject here -->
+                    </div>
+                    
+                    <!-- Quantity and Total Price Add -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                        <div class="qty-control" style="height: 40px;">
+                            <button type="button" class="qty-btn" onclick="adjustCustomizerQty(-1)" style="width:36px; height:38px;">-</button>
+                            <span class="qty-value" id="customizer-qty-display" style="width:40px;">1</span>
+                            <button type="button" class="qty-btn" onclick="adjustCustomizerQty(1)" style="width:36px; height:38px;">+</button>
+                            <input type="hidden" name="quantity" id="customizer-qty-input" value="1">
+                        </div>
+                        
+                        <div style="text-align: right;">
+                            <div style="font-size: 12px; color: var(--text-light); font-weight: 500;">Total Price</div>
+                            <div id="customizer-total-price-display" style="font-size: 24px; font-weight: 800; color: var(--primary-red);">₦0.00</div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; border-radius: 12px; padding: 14px; margin-top: 24px; font-size:16px;">
+                        Add Custom Meal to Cart
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let baseFoodPrice = 0;
+    let selectedOptionDeltas = {};
+    
+    function openCustomizer(foodId) {
+        const overlay = document.getElementById('customizer-modal-overlay');
+        const loader = document.getElementById('customizer-modal-loader');
+        const body = document.getElementById('customizer-modal-body');
+        
+        overlay.classList.add('open');
+        loader.style.display = 'block';
+        body.style.display = 'none';
+        
+        // Reset quantity
+        document.getElementById('customizer-qty-input').value = 1;
+        document.getElementById('customizer-qty-display').innerText = 1;
+        selectedOptionDeltas = {};
+        
+        // Fetch food item options config JSON
+        fetch(`/menu/item/${foodId}/`)
+        .then(res => res.json())
+        .then(data => {
+            loader.style.display = 'none';
+            body.style.display = 'block';
+            
+            // Set header
+            document.getElementById('customizer-food-id').value = data.id;
+            document.getElementById('m-food-title').innerText = data.name;
+            document.getElementById('m-food-desc').innerText = data.description;
+            
+            baseFoodPrice = data.base_price;
+            
+            // Render Option Groups
+            const container = document.getElementById('m-option-groups-container');
+            container.innerHTML = '';
+            
+            if (data.groups.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-light); font-size:13px;">No optional toppings or spices needed for this meal.</p>';
+            }
+            
+            data.groups.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'option-group-box';
+                
+                // Determine if it is a single-select (e.g. Spice) or multi-select (e.g. Toppings)
+                // We make single-select (Spice) if group contains 'spice' in the name
+                const isSpice = group.name.toLowerCase().includes('spice');
+                const badgeText = isSpice ? "Choose 1" : "Optional extras";
+                
+                let groupHTML = `
+                    <div class="option-group-title">
+                        <span>${group.name}</span>
+                        <span>${badgeText}</span>
+                    </div>
+                `;
+                
+                group.choices.forEach((choice, index) => {
+                    const inputType = isSpice ? 'radio' : 'checkbox';
+                    const inputName = isSpice ? `group_${group.id}` : 'options';
+                    // For radio buttons, pre-select the first one (e.g. Mild spice) as default (Customizer UX)
+                    const checkedAttr = (isSpice && index === 0) ? 'checked' : '';
+                    
+                    if (isSpice && index === 0) {
+                        selectedOptionDeltas[inputType + '_' + choice.id] = choice.price_delta;
+                    }
+                    
+                    groupHTML += `
+                        <label class="choice-row" onclick="calculateCustomizerPrice()">
+                            <div class="choice-label-box">
+                                <input type="${inputType}" name="${inputName}" value="${choice.id}" class="choice-input" data-delta="${choice.price_delta}" data-type="${inputType}" ${checkedAttr}>
+                                <span>${choice.name}</span>
+                            </div>
+                            <div class="choice-price">
+                                ${choice.price_delta > 0 ? '+₦' + choice.price_delta.toFixed(2) : 'Free'}
+                            </div>
+                        </label>
+                    `;
+                });
+                
+                groupDiv.innerHTML = groupHTML;
+                container.appendChild(groupDiv);
+            });
+            
+            calculateCustomizerPrice();
+        });
+    }
+    
+    function closeCustomizer() {
+        document.getElementById('customizer-modal-overlay').classList.remove('open');
+    }
+    
+    function adjustCustomizerQty(amount) {
+        const input = document.getElementById('customizer-qty-input');
+        const display = document.getElementById('customizer-qty-display');
+        let val = parseInt(input.value) + amount;
+        if (val < 1) val = 1;
+        input.value = val;
+        display.innerText = val;
+        calculateCustomizerPrice();
+    }
+    
+    function calculateCustomizerPrice() {
+        const inputs = document.querySelectorAll('.choice-input');
+        let optionsTotal = 0;
+        
+        inputs.forEach(input => {
+            if (input.checked) {
+                optionsTotal += parseFloat(input.dataset.delta || 0);
+            }
+        });
+        
+        const qty = parseInt(document.getElementById('customizer-qty-input').value);
+        const finalPrice = (parseFloat(baseFoodPrice) + optionsTotal) * qty;
+        
+        document.getElementById('customizer-total-price-display').innerText = '₦' + finalPrice.toFixed(2);
+    }
+    
+    function submitCustomizer(event) {
+        event.preventDefault();
+        const form = document.getElementById('customizer-form');
+        const foodId = document.getElementById('customizer-food-id').value;
+        const formData = new FormData(form);
+        
+        // For radio buttons, name is group_<id>. Let's extract values and add them to 'options' list
+        const radioInputs = form.querySelectorAll('input[type="radio"]:checked');
+        radioInputs.forEach(radio => {
+            formData.append('options', radio.value);
+        });
+        
+        fetch(`/cart/add/${foodId}/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                closeCustomizer();
+                showNotification(data.message, "success");
+                // Update navigation cart counts
+                document.getElementById('global-cart-count').innerText = data.total_qty;
+                // Reload cart drawer and slide it open (UX WOW factor)
+                refreshDrawerContent();
+                setTimeout(() => toggleCartDrawer(true), 200);
+            } else {
+                showNotification(data.message, "error");
+            }
+        });
+    }
+</script>
+{% endblock %}

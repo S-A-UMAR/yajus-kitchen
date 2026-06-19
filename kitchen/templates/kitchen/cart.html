@@ -1,0 +1,272 @@
+{% extends 'kitchen/base.html' %}
+{% load static %}
+
+{% block title %}Yaju's Kitchen - My Shopping Cart{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Cart page style */
+    .cart-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 40px;
+        margin: 50px 0 80px;
+    }
+    
+    @media (max-width: 900px) {
+        .cart-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .cart-box {
+        background-color: var(--bg-white);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+    
+    .cart-table-header {
+        display: grid;
+        grid-template-columns: 3fr 1fr 1fr 1fr;
+        font-weight: 700;
+        font-family: var(--font-heading);
+        font-size: 14px;
+        text-transform: uppercase;
+        color: var(--text-light);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .cart-row {
+        display: grid;
+        grid-template-columns: 3fr 1fr 1fr 1fr;
+        align-items: center;
+        padding: 20px 0;
+        border-bottom: 1px solid #F3F4F6;
+    }
+    
+    .cart-item-detail {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+    
+    .cart-item-img {
+        width: 80px;
+        height: 80px;
+        border-radius: 12px;
+        object-fit: cover;
+    }
+    
+    .cart-item-info h4 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    
+    .cart-item-options {
+        font-size: 12px;
+        color: var(--text-light);
+    }
+    
+    .cart-price {
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--text-dark);
+    }
+    
+    .cart-subtotal {
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--primary-red);
+    }
+    
+    /* Summary Card */
+    .summary-card {
+        background-color: var(--bg-white);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid rgba(0,0,0,0.02);
+        height: fit-content;
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        font-size: 15px;
+        font-weight: 500;
+    }
+    
+    .summary-total {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--primary-red);
+        border-top: 1px solid var(--border-color);
+        padding-top: 16px;
+        margin-top: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="margin-top: 40px;">
+        <h1 style="font-size: 36px; font-family: var(--font-heading);">Shopping Cart</h1>
+        <p style="color: var(--text-light);">Review items before checkout</p>
+    </div>
+    
+    <div class="cart-grid">
+        <!-- Cart Items -->
+        <div class="cart-box">
+            {% if cart_items %}
+                <div class="cart-table-header">
+                    <span>Meal</span>
+                    <span>Price</span>
+                    <span>Quantity</span>
+                    <span>Total</span>
+                </div>
+                
+                <div id="cart-page-items-container">
+                    {% for item in cart_items %}
+                        <div class="cart-row" id="cart-page-row-{{ item.id }}">
+                            <div class="cart-item-detail">
+                                <img class="cart-item-img" src="{{ item.food.display_image_url }}" alt="{{ item.food.name }}">
+                                <div class="cart-item-info">
+                                    <h4>{{ item.food.name }}</h4>
+                                    {% if item.selected_options.exists %}
+                                        <div class="cart-item-options">
+                                            {% for opt in item.selected_options.all %}
+                                                {{ opt.name }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <button class="remove-btn" onclick="removeCartPageItem({{ item.id }})" style="margin-top: 8px;">Remove</button>
+                                </div>
+                            </div>
+                            
+                            <div class="cart-price">₦{{ item.unit_price }}</div>
+                            
+                            <div>
+                                <div class="qty-control" style="width: fit-content;">
+                                    <button class="qty-btn" onclick="updateCartPageQty({{ item.id }}, {{ item.quantity|add:'-1' }})">-</button>
+                                    <span class="qty-value" id="cart-page-qty-{{ item.id }}">{{ item.quantity }}</span>
+                                    <button class="qty-btn" onclick="updateCartPageQty({{ item.id }}, {{ item.quantity|add:'1' }})">+</button>
+                                </div>
+                            </div>
+                            
+                            <div class="cart-subtotal" id="cart-page-subtotal-{{ item.id }}">₦{{ item.total_price }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 60px 0; color: var(--text-light);" id="cart-empty-placeholder">
+                    <p style="font-size: 20px; font-weight:600; margin-bottom:16px;">Your shopping cart is empty.</p>
+                    <p>Add fresh Nigerian delicacies from our main menu.</p>
+                    <a href="{% url 'menu' %}" class="btn btn-primary" style="margin-top: 24px;">Order Food</a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Summary Card -->
+        <div class="summary-card">
+            <h3 style="font-family: var(--font-heading); font-size:20px; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">Order Summary</h3>
+            
+            <div class="summary-row">
+                <span>Subtotal:</span>
+                <span id="summary-subtotal">₦{{ cart_total_price|default:"0.00" }}</span>
+            </div>
+            
+            <div class="summary-row">
+                <span>Estimated Delivery:</span>
+                <span style="color: var(--success); font-weight:600;">FREE</span>
+            </div>
+            
+            <div class="summary-row summary-total">
+                <span>Total:</span>
+                <span id="summary-total">₦{{ cart_total_price|default:"0.00" }}</span>
+            </div>
+            
+            {% if cart_items %}
+                <a href="{% url 'checkout' %}" class="btn btn-primary" style="width: 100%; border-radius:12px; margin-top: 24px; padding: 14px; display: block; text-align: center;">
+                    Checkout Order
+                </a>
+            {% endif %}
+            
+            <a href="{% url 'menu' %}" style="display: block; text-align: center; margin-top: 16px; font-size: 14px; font-weight:600; color: var(--text-light);">
+                &larr; Continue Shopping
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // AJAX functionality for cart page
+    function updateCartPageQty(itemId, newQty) {
+        const csrftoken = '{{ csrf_token }}';
+        const formData = new FormData();
+        formData.append('quantity', newQty);
+        
+        fetch(`/cart/update/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (newQty <= 0) {
+                    document.getElementById(`cart-page-row-${itemId}`).remove();
+                    if (data.cart_qty === 0) {
+                        location.reload();
+                    }
+                } else {
+                    document.getElementById(`cart-page-qty-${itemId}`).innerText = newQty;
+                    document.getElementById(`cart-page-subtotal-${itemId}`).innerText = '₦' + data.item_total.toFixed(2);
+                }
+                
+                // Update Summary Cards & Nav Cart count
+                document.getElementById('global-cart-count').innerText = data.cart_qty;
+                document.getElementById('summary-subtotal').innerText = '₦' + data.cart_total.toFixed(2);
+                document.getElementById('summary-total').innerText = '₦' + data.cart_total.toFixed(2);
+                document.getElementById('drawer-total-price').innerText = '₦' + data.cart_total.toFixed(2);
+                refreshDrawerContent();
+            }
+        });
+    }
+
+    function removeCartPageItem(itemId) {
+        const csrftoken = '{{ csrf_token }}';
+        fetch(`/cart/remove/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById(`cart-page-row-${itemId}`).remove();
+                if (data.cart_qty === 0) {
+                    location.reload();
+                } else {
+                    document.getElementById('global-cart-count').innerText = data.cart_qty;
+                    document.getElementById('summary-subtotal').innerText = '₦' + data.cart_total.toFixed(2);
+                    document.getElementById('summary-total').innerText = '₦' + data.cart_total.toFixed(2);
+                    document.getElementById('drawer-total-price').innerText = '₦' + data.cart_total.toFixed(2);
+                    refreshDrawerContent();
+                    showNotification("Item removed from cart", "info");
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

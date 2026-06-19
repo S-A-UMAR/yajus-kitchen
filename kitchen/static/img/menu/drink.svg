@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Drink placeholder</title>
+  <desc id="desc">Illustrated placeholder for drinks.</desc>
+  <rect width="900" height="540" fill="#eff6ff"/>
+  <circle cx="450" cy="270" r="170" fill="#38bdf8" opacity=".16"/>
+  <path d="M358 170h184l-25 214c-4 35-34 61-69 61h-1c-35 0-65-26-69-61z" fill="#ffffff" stroke="#0f172a" stroke-width="10"/>
+  <path d="M381 264h138l-13 110c-3 24-24 42-48 42h-16c-24 0-45-18-48-42z" fill="#f97316"/>
+  <path d="M478 150l78-62" stroke="#b22222" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="414" cy="304" r="13" fill="#fde68a"/>
+  <circle cx="480" cy="334" r="12" fill="#ef4444"/>
+  <text x="450" y="494" text-anchor="middle" fill="#075985" font-family="Arial, sans-serif" font-size="34" font-weight="700">Drinks</text>
+</svg>

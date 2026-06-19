@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Meal placeholder</title>
+  <desc id="desc">Generic illustrated placeholder for meals.</desc>
+  <rect width="900" height="540" fill="#fff8f0"/>
+  <circle cx="450" cy="270" r="170" fill="#b22222" opacity=".1"/>
+  <ellipse cx="450" cy="336" rx="240" ry="62" fill="#d6a15d"/>
+  <ellipse cx="450" cy="290" rx="206" ry="108" fill="#ffffff"/>
+  <circle cx="392" cy="271" r="28" fill="#f97316"/>
+  <circle cx="454" cy="240" r="22" fill="#22c55e"/>
+  <circle cx="515" cy="291" r="28" fill="#b22222"/>
+  <text x="450" y="454" text-anchor="middle" fill="#7f1d1d" font-family="Arial, sans-serif" font-size="34" font-weight="700">Meal</text>
+</svg>
