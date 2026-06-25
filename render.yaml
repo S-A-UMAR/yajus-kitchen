@@ -2,7 +2,7 @@ services:
   - type: web
     name: yajus-kitchen
     env: python
-    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python run_migrations.py"
     startCommand: "gunicorn yajus_kitchen.wsgi"
     envVars:
       - key: SECRET_KEY
