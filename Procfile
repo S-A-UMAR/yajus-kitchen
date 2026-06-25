@@ -1,0 +1,1 @@
+web: gunicorn yajus_kitchen.wsgi

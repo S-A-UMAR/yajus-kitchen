@@ -32,6 +32,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -67,9 +68,11 @@ TIDB_HOST = os.environ.get('TIDB_HOST')
 TIDB_USER = os.environ.get('TIDB_USER')
 TIDB_PASSWORD = os.environ.get('TIDB_PASSWORD')
 TIDB_DB_NAME = os.environ.get('TIDB_DB_NAME')
+TIDB_SSL_CA = os.environ.get('TIDB_SSL_CA')
 
 if TIDB_HOST and TIDB_USER and TIDB_PASSWORD and TIDB_DB_NAME:
     print("[Database] Connecting to TiDB database...")
+    tidb_ssl_options = {'ca': TIDB_SSL_CA} if TIDB_SSL_CA else {'check_hostname': False}
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -80,9 +83,7 @@ if TIDB_HOST and TIDB_USER and TIDB_PASSWORD and TIDB_DB_NAME:
             'PORT': os.environ.get('TIDB_PORT', '4000'),
             'OPTIONS': {
                 'charset': 'utf8mb4',
-                'ssl': {
-                    'ca': os.environ.get('TIDB_SSL_CA')
-                } if os.environ.get('TIDB_SSL_CA') else {}
+                'ssl': tidb_ssl_options,
             }
         }
     }
@@ -121,6 +122,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'kitchen/static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media Storage
 # Use Cloudinary if credentials are provided, else fallback to local storage
