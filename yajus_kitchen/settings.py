@@ -12,6 +12,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fallback-secret-key-f
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host]
+CSRF_TRUSTED_ORIGINS = ['https://' + host for host in ALLOWED_HOSTS] + ['http://' + host for host in ALLOWED_HOSTS]
 
 # Application definition
 INSTALLED_APPS = [
