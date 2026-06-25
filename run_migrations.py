@@ -15,3 +15,7 @@ except Exception as e:
 
 # Now run all other migrations normally
 call_command('migrate')
+
+# Now seed the database with sample data
+from seed_data import seed
+seed()
