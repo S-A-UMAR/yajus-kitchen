@@ -222,7 +222,7 @@ def checkout_view(request):
         if request.user.is_authenticated:
             user = request.user
             # Update user profile with phone and address
-            profile = user.profile
+            profile, _ = Profile.objects.get_or_create(user=user)
             profile.phone = phone
             profile.address = address
             profile.save()
@@ -233,9 +233,10 @@ def checkout_view(request):
                 return redirect('checkout')
             
             user = User.objects.create_user(username=email, email=email, password=password)
-            user.profile.phone = phone
-            user.profile.address = address
-            user.profile.save()
+            profile, _ = Profile.objects.get_or_create(user=user)
+            profile.phone = phone
+            profile.address = address
+            profile.save()
             login(request, user)
             
         # Create Order
@@ -274,8 +275,9 @@ def checkout_view(request):
     prefill = {}
     if request.user.is_authenticated:
         prefill['email'] = request.user.email
-        prefill['phone'] = request.user.profile.phone
-        prefill['address'] = request.user.profile.address
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        prefill['phone'] = profile.phone
+        prefill['address'] = profile.address
         
     return render(request, 'kitchen/checkout.html', {
         'prefill': prefill
@@ -504,6 +506,9 @@ def dashboard_view(request):
     Customer dashboard displaying orders and profiles.
     """
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Ensure user has a profile
+    Profile.objects.get_or_create(user=request.user)
     
     if request.method == 'POST':
         # Reorder previous order
