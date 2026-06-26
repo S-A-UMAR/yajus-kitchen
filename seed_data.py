@@ -51,7 +51,7 @@ def seed():
 
     print("Created option choices and groups.")
 
-    # 4. Create Food Items
+    # 4. Create Food Items - ensure they're available!
     foods = [
         {
             'name': 'Smoky Party Jollof Rice',
@@ -128,6 +128,7 @@ def seed():
     ]
 
     for f_data in foods:
+        # Get or create food, and ensure is_available is True!
         food, created = FoodItem.objects.get_or_create(
             name=f_data['name'],
             defaults={
@@ -137,6 +138,11 @@ def seed():
                 'is_available': True
             }
         )
+        # Make sure it's available even if it existed before!
+        if not food.is_available:
+            food.is_available = True
+            food.save()
+            
         if created:
             print(f"Created food item: {food.name}")
             
@@ -146,6 +152,7 @@ def seed():
         if f_data['has_toppings']:
             FoodItemOption.objects.get_or_create(food=food, group=toppings_group)
 
+    print(f"Total food items now in database: {FoodItem.objects.count()}")
     print("Database seeding completed successfully!")
 
 if __name__ == '__main__':
