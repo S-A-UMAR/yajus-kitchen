@@ -60,12 +60,6 @@ class FoodItem(models.Model):
         if self.image:
             return self.image.url
 
-        static_menu_dir = Path(settings.BASE_DIR) / 'kitchen' / 'static' / 'img' / 'menu'
-        for extension in ('jpeg', 'jpg', 'png', 'webp'):
-            image_name = f"{self.name}.{extension}"
-            if (static_menu_dir / image_name).exists():
-                return f"/static/img/menu/{quote(image_name)}"
-
         category_key = (self.category.name or '').strip().lower().replace(' ', '-')
         placeholders = {
             'rice': 'rice.svg',

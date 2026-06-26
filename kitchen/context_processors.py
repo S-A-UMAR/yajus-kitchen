@@ -54,18 +54,36 @@ def cart_processor(request):
     """
     Exposes the active cart and its items to all templates.
     """
-    # Exclude admin and auth pages from running database checks to reduce overhead if necessary
-    if request.path.startswith('/admin/'):
+    # Exclude admin and auth pages from running database checks to reduce overhead
+    if request.path.startswith('/admin/') or request.path.startswith('/accounts/'):
         return {}
         
-    cart = get_or_create_cart(request)
-    cart_items = cart.items.all().select_related('food').prefetch_related('selected_options')
-    
-    total_qty = sum(item.quantity for item in cart_items)
-    
-    return {
-        'cart': cart,
-        'cart_items': cart_items,
-        'cart_total_qty': total_qty,
-        'cart_total_price': cart.total_price,
-    }
+    try:
+        cart = get_or_create_cart(request)
+        # Use select_related and prefetch_related for efficiency
+        cart_items = cart.items.select_related('food').prefetch_related('selected_options').all()
+        
+        total_qty = 0
+        for item in cart_items:
+            total_qty += item.quantity
+        
+        # Calculate total price without hitting the database multiple times
+        total_price = 0
+        for item in cart_items:
+            option_deltas = 0
+            for opt in item.selected_options.all():
+                option_deltas += float(opt.price_delta)
+            total_price += (float(item.food.base_price) + option_deltas) * item.quantity
+        
+        return {
+            'cart': cart,
+            'cart_items': cart_items,
+            'cart_total_qty': total_qty,
+            'cart_total_price': round(total_price, 2),
+        }
+    except Exception:
+        # Fail gracefully if anything goes wrong
+        return {
+            'cart_total_qty': 0,
+            'cart_total_price': 0,
+        }

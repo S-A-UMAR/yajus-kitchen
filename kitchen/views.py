@@ -29,7 +29,7 @@ def home_view(request):
     Renders the Home Page. Shows popular items, categories, and testimonials.
     """
     categories = Category.objects.all()[:4]
-    popular_items = FoodItem.objects.filter(is_available=True)[:3]
+    popular_items = FoodItem.objects.filter(is_available=True).select_related('category')[:3]
     return render(request, 'kitchen/home.html', {
         'categories': categories,
         'popular_items': popular_items
@@ -52,8 +52,6 @@ def menu_view(request):
     if search_query:
         food_items = food_items.filter(name__icontains=search_query)
         
-    # Prefetch customization option groups for each food item
-    # so they can be parsed in the food card customization modal
     return render(request, 'kitchen/menu.html', {
         'categories': categories,
         'food_items': food_items,
