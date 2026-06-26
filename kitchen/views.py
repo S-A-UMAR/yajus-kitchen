@@ -2,6 +2,7 @@ import os
 import json
 import hmac
 import hashlib
+import csv
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
@@ -10,10 +11,16 @@ from django.contrib import messages
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Sum, Count
 from django.utils import timezone
 from django.conf import settings
+
+from .email_utils import (
+    send_order_confirmation_email,
+    send_order_status_update_email,
+    send_payment_confirmation_email
+)
 
 from .models import (
     Category, FoodItem, OptionChoice, OptionGroup,
@@ -370,6 +377,10 @@ def payment_callback_view(request):
             # Clear Cart
             cart = get_or_create_cart(request)
             cart.items.all().delete()
+            
+            # Send confirmation emails
+            send_order_confirmation_email(order)
+            send_payment_confirmation_email(order)
             
             messages.success(request, "Payment verified successfully!")
             return redirect('order_success', order_id=order.id)

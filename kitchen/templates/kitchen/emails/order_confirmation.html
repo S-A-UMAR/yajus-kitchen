@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Order Confirmation</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #B22222; color: white; padding: 20px; text-align: center; }
+        .content { background: #f9f9f9; padding: 20px; margin: 20px 0; }
+        .order-details { background: white; padding: 15px; margin: 15px 0; border: 1px solid #ddd; }
+        .item { padding: 10px 0; border-bottom: 1px solid #eee; }
+        .total { font-size: 18px; font-weight: bold; color: #B22222; margin-top: 15px; }
+        .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Order Confirmation</h1>
+            <p>Thank you for choosing Yaju's Kitchen!</p>
+        </div>
+        
+        <div class="content">
+            <p>Hi {{ customer_name }},</p>
+            <p>Your order has been received and is being processed. Here are your order details:</p>
+            
+            <div class="order-details">
+                <h3>Order #{{ order.id }}</h3>
+                <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                <p><strong>Delivery Address:</strong><br>{{ order.delivery_address|linebreaks }}</p>
+                <p><strong>Phone:</strong> {{ order.phone }}</p>
+                
+                <h4>Items Ordered:</h4>
+                {% for item in items %}
+                <div class="item">
+                    <strong>{{ item.quantity }}x {{ item.food_name }}</strong><br>
+                    {% if item.options_summary %}
+                    <small>Options: {{ item.options_summary }}</small><br>
+                    {% endif %}
+                    <small>₦{{ item.unit_price }} each</small>
+                </div>
+                {% endfor %}
+                
+                <div class="total">
+                    Total: ₦{{ order.total }}
+                </div>
+            </div>
+            
+            <p>We'll notify you when your order status changes. If you have any questions, please contact us.</p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Yaju's Kitchen</strong></p>
+            <p>This email was sent automatically. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>

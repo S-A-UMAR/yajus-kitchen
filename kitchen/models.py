@@ -34,6 +34,25 @@ def save_user_profile(sender, instance, **kwargs):
         pass
 
 
+# Signal to send email when order status changes
+@receiver(post_save, sender=Order)
+def order_status_changed(sender, instance, created, **kwargs):
+    """Send email notification when order status changes"""
+    if created:
+        # Order was just created - confirmation email sent during checkout
+        return
+    
+    # Try to get the old status from the database
+    try:
+        old_order = Order.objects.get(pk=instance.pk)
+        if old_order.status != instance.status:
+            # Status has changed - send email
+            from .email_utils import send_order_status_update_email
+            send_order_status_update_email(instance, old_order.status)
+    except Order.DoesNotExist:
+        pass
+
+
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     
@@ -51,6 +70,18 @@ class FoodItem(models.Model):
     base_price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='menu/', blank=True, null=True)
     is_available = models.BooleanField(default=True)
+    
+    # Stock/Inventory Management
+    stock_quantity = models.PositiveIntegerField(default=0, help_text="Current available stock")
+    low_stock_threshold = models.PositiveIntegerField(default=10, help_text="Alert when stock falls below this")
+    track_stock = models.BooleanField(default=True, help_text="Enable automatic stock tracking")
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['category']),
+            models.Index(fields=['is_available']),
+        ]
 
     def __str__(self):
         return self.name
@@ -80,6 +111,46 @@ class FoodItem(models.Model):
             'dessert': 'dessert.svg',
         }
         return f"/static/img/menu/{placeholders.get(category_key, 'meal.svg')}"
+
+    @property
+    def is_low_stock(self):
+        """Check if item is running low on stock"""
+        if not self.track_stock:
+            return False
+        return self.stock_quantity <= self.low_stock_threshold
+
+    @property
+    def stock_status(self):
+        """Get human-readable stock status"""
+        if not self.track_stock:
+            return "Not Tracked"
+        if self.stock_quantity == 0:
+            return "Out of Stock"
+        if self.is_low_stock:
+            return f"Low Stock ({self.stock_quantity})"
+        return f"In Stock ({self.stock_quantity})"
+
+    def decrease_stock(self, quantity=1):
+        """Decrease stock quantity and update availability"""
+        if not self.track_stock:
+            return True
+        if self.stock_quantity >= quantity:
+            self.stock_quantity -= quantity
+            if self.stock_quantity == 0:
+                self.is_available = False
+            self.save(update_fields=['stock_quantity', 'is_available'])
+            return True
+        return False
+
+    def increase_stock(self, quantity=1):
+        """Increase stock quantity"""
+        if not self.track_stock:
+            return
+        self.stock_quantity += quantity
+        if self.stock_quantity > 0 and not self.is_available:
+            self.is_available = True
+        self.save(update_fields=['stock_quantity', 'is_available'])
+
 
 
 class OptionGroup(models.Model):
@@ -158,6 +229,16 @@ class Order(models.Model):
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled')
     ]
+    
+    # Define valid status transitions (from -> [to, ...])
+    STATUS_TRANSITIONS = {
+        'received': ['preparing', 'cancelled'],
+        'preparing': ['out_for_delivery', 'cancelled'],
+        'out_for_delivery': ['delivered'],
+        'delivered': [],  # Final state
+        'cancelled': [],  # Final state
+    }
+    
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     email = models.EmailField()
     phone = models.CharField(max_length=20)
@@ -170,6 +251,43 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} ({self.status})"
+    
+    def can_transition_to(self, new_status):
+        """Check if current status can transition to new_status"""
+        return new_status in self.STATUS_TRANSITIONS.get(self.status, [])
+    
+    def clean(self):
+        """Validate status transitions on model clean"""
+        from django.core.exceptions import ValidationError
+        
+        # Skip validation for new objects
+        if self.pk is None:
+            return
+            
+        # Get current status from database
+        try:
+            old_order = Order.objects.get(pk=self.pk)
+            if old_order.status != self.status:
+                if not old_order.can_transition_to(self.status):
+                    raise ValidationError({
+                        'status': f'Cannot transition from "{old_order.get_status_display()}" to "{self.get_status_display()}". '
+                                  f'Allowed transitions: {", ".join([dict(self.STATUS_CHOICES)[s] for s in self.STATUS_TRANSITIONS.get(old_order.status, [])])}'
+                    })
+        except Order.DoesNotExist:
+            pass
+    
+    def save(self, *args, **kwargs):
+        """Override save to run validation"""
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['user']),
+            models.Index(fields=['email']),
+        ]
 
 
 class OrderItem(models.Model):
