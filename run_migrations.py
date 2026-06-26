@@ -16,6 +16,10 @@ except Exception as e:
 # Now run all other migrations normally
 call_command('migrate')
 
-# Now seed the database with sample data
-from seed_data import seed
-seed()
+# Now seed the database with sample data - force update if needed
+try:
+    import seed_data
+    seed_data.seed()
+    print("Seeding completed successfully!")
+except Exception as e:
+    print(f"Seeding encountered an error (but migrations still ran): {e}")
