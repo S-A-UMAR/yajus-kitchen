@@ -337,43 +337,41 @@
     </section>
 
     <!-- 2. Popular Dishes Grid -->
-    <section style="padding: 80px 0 40px;">
-        <div class="container">
-            <div class="section-title-box">
-                <div class="section-subtitle">Chef's Recommendations</div>
-                <h2 class="section-title">Popular Meals</h2>
-            </div>
-            
-            <div class="menu-grid">
-                {% for item in popular_items %}
-                    <div class="food-card">
-                        <div class="food-card-img-box">
-                            <img class="food-card-img" src="{{ item.display_image_url }}" alt="{{ item.name }}">
-                            <div class="food-card-category">{{ item.category.name }}</div>
-                        </div>
-                        
-                        <div class="food-card-content">
-                            <h3 class="food-card-title">{{ item.name }}</h3>
-                            <p class="food-card-desc">{{ item.description|truncatewords:15 }}</p>
+    {% if popular_items %}
+        <section style="padding: 80px 0 40px;">
+            <div class="container">
+                <div class="section-title-box">
+                    <div class="section-subtitle">Chef's Recommendations</div>
+                    <h2 class="section-title">Popular Meals</h2>
+                </div>
+                
+                <div class="menu-grid">
+                    {% for item in popular_items %}
+                        <div class="food-card">
+                            <div class="food-card-img-box">
+                                <img class="food-card-img" src="{{ item.display_image_url }}" alt="{{ item.name }}">
+                                <div class="food-card-category">{{ item.category.name }}</div>
+                            </div>
                             
-                            <div class="food-card-footer">
-                                <span class="food-card-price">₦{{ item.base_price }}</span>
-                                <a href="{% url 'menu' %}?search={{ item.name }}" class="add-to-cart-btn">+</a>
+                            <div class="food-card-content">
+                                <h3 class="food-card-title">{{ item.name }}</h3>
+                                <p class="food-card-desc">{{ item.description|truncatewords:15 }}</p>
+                                
+                                <div class="food-card-footer">
+                                    <span class="food-card-price">₦{{ item.base_price }}</span>
+                                    <a href="{% url 'menu' %}?search={{ item.name }}" class="add-to-cart-btn">+</a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {% empty %}
-                    <div style="grid-column: 1/-1; text-align: center; color: var(--text-light);">
-                        <p>No food items added yet. Click <a href="/admin/kitchen/fooditem/add/" style="color:var(--primary-red); text-decoration:underline;">here</a> to add items in Admin panel!</p>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
+                
+                <div style="text-align: center;">
+                    <a href="{% url 'menu' %}" class="btn btn-outline" style="border-radius:12px; padding: 12px 30px;">Explore Full Menu</a>
+                </div>
             </div>
-            
-            <div style="text-align: center;">
-                <a href="{% url 'menu' %}" class="btn btn-outline" style="border-radius:12px; padding: 12px 30px;">Explore Full Menu</a>
-            </div>
-        </div>
-    </section>
+        </section>
+    {% endif %}
 
     <!-- 3. Banner CTA -->
     <section class="container">
