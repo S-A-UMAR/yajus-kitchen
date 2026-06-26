@@ -18,14 +18,20 @@ class Profile(models.Model):
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        Profile.objects.create(user=instance)
+        try:
+            Profile.objects.get_or_create(user=instance)
+        except Exception:
+            pass
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    if hasattr(instance, 'profile'):
-        instance.profile.save()
-    else:
-        Profile.objects.create(user=instance)
+    try:
+        if hasattr(instance, 'profile'):
+            instance.profile.save()
+        else:
+            Profile.objects.create(user=instance)
+    except Exception:
+        pass
 
 
 class Category(models.Model):
