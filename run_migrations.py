@@ -11,48 +11,15 @@ from django.db import connection, OperationalError, ProgrammingError
 
 print("Starting migrations...")
 
-# First, try to manually add the new columns if they don't exist (for TiDB)
-try:
-    with connection.cursor() as cursor:
-        # Check if stock_quantity column exists
-        try:
-            cursor.execute("SHOW COLUMNS FROM kitchen_fooditem LIKE 'stock_quantity'")
-            if not cursor.fetchone():
-                # Column doesn't exist - add it
-                cursor.execute("ALTER TABLE kitchen_fooditem ADD COLUMN stock_quantity INTEGER UNSIGNED DEFAULT 0 NOT NULL")
-                print("Added stock_quantity column")
-        except (OperationalError, ProgrammingError):
-            pass
-            
-        try:
-            cursor.execute("SHOW COLUMNS FROM kitchen_fooditem LIKE 'low_stock_threshold'")
-            if not cursor.fetchone():
-                cursor.execute("ALTER TABLE kitchen_fooditem ADD COLUMN low_stock_threshold INTEGER UNSIGNED DEFAULT 10 NOT NULL")
-                print("Added low_stock_threshold column")
-        except (OperationalError, ProgrammingError):
-            pass
-            
-        try:
-            cursor.execute("SHOW COLUMNS FROM kitchen_fooditem LIKE 'track_stock'")
-            if not cursor.fetchone():
-                cursor.execute("ALTER TABLE kitchen_fooditem ADD COLUMN track_stock BOOL DEFAULT TRUE NOT NULL")
-                print("Added track_stock column")
-        except (OperationalError, ProgrammingError):
-            pass
-except Exception as e:
-    print(f"Warning checking/adding columns manually: {e}")
-
 # Try to check if 0001_initial is applied - make this very safe
 initial_applied = False
 try:
     with connection.cursor() as cursor:
-        # Try to check django_migrations table (might not exist if fresh DB)
         try:
             cursor.execute("SELECT name FROM django_migrations WHERE app='kitchen' AND name='0001_initial'")
             if cursor.fetchone():
                 initial_applied = True
         except (OperationalError, ProgrammingError):
-            # Table doesn't exist or query failed - assume we need to run all migrations normally
             initial_applied = False
 except Exception as e:
     print(f"Warning checking migration status: {e}")
@@ -64,16 +31,8 @@ if not initial_applied:
         call_command('migrate', '--fake', 'kitchen', '0001')
         print("Faked kitchen 0001_initial successfully!")
     except Exception as e:
-        print(f"Note: Could not fake initial migration (maybe it's already applied or tables don't exist): {e}")
+        print(f"Note: Could not fake initial migration: {e}")
 
-# Now try to fake migration 0002 since we manually added the columns
-try:
-    call_command('migrate', '--fake', 'kitchen', '0002')
-    print("Faked kitchen 0002 successfully!")
-except Exception as e:
-    print(f"Note: Could not fake 0002: {e}")
-
-# Now run all migrations just to be safe
 print("Running all migrations...")
 try:
     call_command('migrate')
@@ -88,7 +47,6 @@ try:
     from kitchen.models import Category, FoodItem, OptionGroup, OptionChoice, FoodItemOption
     from django.db.models.signals import post_save
     
-    # Temporarily disconnect post_save signals to avoid Profile issues
     try:
         from kitchen.models import create_user_profile, save_user_profile
         post_save.disconnect(create_user_profile, sender=User)
@@ -96,7 +54,6 @@ try:
     except Exception:
         pass
     
-    # Create superuser
     try:
         if not User.objects.filter(username='admin').exists():
             User.objects.create_superuser('admin', 'admin@yajuskitchen.com', 'adminpassword123')
@@ -106,7 +63,6 @@ try:
     except Exception as e:
         print(f"Skipping superuser creation: {e}")
     
-    # Create categories
     categories_data = ['Rice', 'Soups', 'Swallow', 'Grills', 'Drinks', 'Desserts']
     categories = {}
     for name in categories_data:
@@ -115,7 +71,6 @@ try:
         if created:
             print(f"Created category: {name}")
     
-    # Create food items
     foods = [
         {'name': 'Smoky Party Jollof Rice', 'category': 'Rice', 'description': 'Premium smokey Jollof served with sweet fried plantain and salad.', 'base_price': 3500.00},
         {'name': 'Special Fried Rice', 'category': 'Rice', 'description': 'Deliciously stir-fried rice loaded with fresh vegetables and eggs.', 'base_price': 3800.00},
