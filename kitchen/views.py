@@ -24,7 +24,7 @@ from .email_utils import (
 
 from .models import (
     Category, FoodItem, OptionChoice, OptionGroup,
-    Cart, CartItem, Order, OrderItem, Payment, Review
+    Cart, CartItem, Order, OrderItem, Payment, Review, Profile
 )
 from .context_processors import get_or_create_cart
 
