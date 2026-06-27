@@ -123,7 +123,7 @@
         
         <div class="tracking-header">
             <h1 style="font-family: var(--font-heading); font-size:28px; margin-bottom: 8px;">Order Live Tracking</h1>
-            <p style="color: var(--text-light);">Order #{{ order.id }} &bull; Value: ₦{{ order.total }}</p>
+            <p style="color: var(--text-light);">Order #{{ order.id }} &bull; Value: ₦{{ order.total_amount }}</p>
             
             {% if order.status == 'cancelled' %}
                 <div style="background-color: #FEE2E2; border: 1px solid #FCA5A5; color: #991B1B; padding: 12px; border-radius: 12px; margin-top: 20px; font-weight:700;">
@@ -133,30 +133,48 @@
         </div>
         
         <ul class="timeline" id="tracking-timeline">
-            <!-- Received State -->
-            <li class="timeline-item" id="step-received">
+            <!-- Pending State -->
+            <li class="timeline-item" id="step-pending">
                 <div class="timeline-marker"></div>
                 <div class="timeline-content">
-                    <h3 class="timeline-title">Order Received</h3>
-                    <p class="timeline-desc">We have received your payment and our kitchen staff is reviewing the order.</p>
+                    <h3 class="timeline-title">Order Pending</h3>
+                    <p class="timeline-desc">We have received your payment and are reviewing the order.</p>
                 </div>
             </li>
             
-            <!-- Preparing State -->
-            <li class="timeline-item" id="step-preparing">
+            <!-- Processing State -->
+            <li class="timeline-item" id="step-processing">
                 <div class="timeline-marker"></div>
                 <div class="timeline-content">
-                    <h3 class="timeline-title">Preparing Meal</h3>
-                    <p class="timeline-desc">Our master chefs are assembling and preparing your custom Nigerian delicacies.</p>
+                    <h3 class="timeline-title">Processing</h3>
+                    <p class="timeline-desc">We're preparing your order in the kitchen.</p>
+                </div>
+            </li>
+            
+            <!-- Cooking State -->
+            <li class="timeline-item" id="step-cooking">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <h3 class="timeline-title">Cooking</h3>
+                    <p class="timeline-desc">Our chefs are preparing your delicious meal.</p>
+                </div>
+            </li>
+            
+            <!-- Ready for Pickup State -->
+            <li class="timeline-item" id="step-ready">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <h3 class="timeline-title">Ready for Pickup</h3>
+                    <p class="timeline-desc">Your order is ready to be picked up.</p>
                 </div>
             </li>
             
             <!-- Out for Delivery State -->
-            <li class="timeline-item" id="step-out_for_delivery">
+            <li class="timeline-item" id="step-out">
                 <div class="timeline-marker"></div>
                 <div class="timeline-content">
                     <h3 class="timeline-title">Out for Delivery</h3>
-                    <p class="timeline-desc">The dispatcher has picked up your food box and is speeding to your address.</p>
+                    <p class="timeline-desc">The dispatcher has picked up your food and is on the way.</p>
                 </div>
             </li>
             
@@ -165,7 +183,7 @@
                 <div class="timeline-marker"></div>
                 <div class="timeline-content">
                     <h3 class="timeline-title">Delivered</h3>
-                    <p class="timeline-desc">Food box delivered safely. Enjoy your premium Nigerian dining experience!</p>
+                    <p class="timeline-desc">Your meal has been delivered safely!</p>
                 </div>
             </li>
         </ul>
@@ -184,7 +202,7 @@
     const orderId = "{{ order.id }}";
     
     // Map status strings to list item element IDs in order
-    const statusWorkflow = ['received', 'preparing', 'out_for_delivery', 'delivered'];
+    const statusWorkflow = ['pending', 'processing', 'cooking', 'ready', 'out', 'delivered'];
     
     function updateTrackingUI(currentStatus) {
         if (currentStatus === 'cancelled') {

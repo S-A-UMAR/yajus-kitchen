@@ -101,13 +101,9 @@
             </div>
             
             <div style="border-top:1px solid var(--border-color); padding-top:20px;">
-                <div style="margin-bottom:12px;">
-                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-light);">Phone Number</div>
-                    <div style="font-size:14px; font-weight:500;">{{ user.profile.phone|default:"Not specified" }}</div>
-                </div>
                 <div>
-                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-light);">Saved Delivery Address</div>
-                    <div style="font-size:14px; font-weight:500; line-height:1.4;">{{ user.profile.address|default:"Not specified" }}</div>
+                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-light);">Email</div>
+                    <div style="font-size:14px; font-weight:500;">{{ user.email|default:"Not specified" }}</div>
                 </div>
             </div>
         </div>
@@ -137,7 +133,7 @@
                                         {{ order.get_status_display }}
                                     </span>
                                 </td>
-                                <td style="font-weight: 700; color:var(--primary-red);">₦{{ order.total }}</td>
+                                <td style="font-weight: 700; color:var(--primary-red);">₦{{ order.total_amount }}</td>
                                 <td>
                                     <div style="display:flex; gap:10px;">
                                         <a href="{% url 'order_detail' order.id %}" class="btn btn-outline" style="padding: 6px 12px; font-size:12px; border-radius:6px;">Track</a>

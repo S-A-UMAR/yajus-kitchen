@@ -7,12 +7,29 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'yajus_kitchen.settings')
 django.setup()
 
 from django.core.management import call_command
+from django.db import connection, OperationalError, ProgrammingError
 from django.contrib.auth.models import User
 from kitchen.models import Category, FoodItem
 
-print("Running migrations...")
-call_command('migrate')
-print("Migrations completed!")
+print("Starting migrations...")
+
+# Try to apply migrations normally first!
+try:
+    print("Running migrations normally...")
+    call_command('migrate')
+    print("Migrations applied normally!")
+except (OperationalError, ProgrammingError) as e:
+    print(f"Normal migration failed: {e}")
+    print("Trying to fake initial migration...")
+    try:
+        call_command('migrate', '--fake', 'kitchen', '0001')
+        print("Faked initial migration! Now running all migrations again...")
+        call_command('migrate')
+        print("All migrations completed after faking initial!")
+    except Exception as e2:
+        print(f"Failed to fake initial: {e2}")
+except Exception as e:
+    print(f"Unexpected error: {e}")
 
 print("Seeding database...")
 try:
