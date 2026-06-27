@@ -72,11 +72,21 @@ class FoodItem(models.Model):
         if self.image:
             return self.image.url
 
-        static_menu_dir = Path(settings.BASE_DIR) / 'kitchen' / 'static' / 'img' / 'menu'
-        for extension in ('jpeg', 'jpg', 'png', 'webp'):
-            image_name = f"{self.name}.{extension}"
-            if (static_menu_dir / image_name).exists():
-                return f"/static/img/menu/{quote(image_name)}"
+        # Predefined known static images (avoids filesystem checks)
+        known_images = {
+            'Smoky Party Jollof Rice': 'Smoky Party Jollof Rice.jpeg',
+            'Special Fried Rice': 'Special Fried Rice.jpeg',
+            'Efo Riro Native Soup': 'Efo Riro Native Soup.jpeg',
+            'Egusi Soup': 'Egusi Soup.jpeg',
+            'Premium Pounded Yam': 'Premium Pounded Yam.jpeg',
+            'Oat Swallow': 'Oat Swallow.jpeg',
+            'Spiced Suya Platter': 'Spiced Suya Platter.jpeg',
+            'Yaju Signature Chapman': 'Yaju Signature Chapman.jpeg',
+            'Sweet Golden Puff Puff': 'Sweet Golden Puff Puff.jpeg',
+        }
+        
+        if self.name in known_images:
+            return f"/static/img/menu/{quote(known_images[self.name])}"
 
         category_key = (self.category.name or '').strip().lower().replace(' ', '-')
         placeholders = {
