@@ -34,25 +34,6 @@ def save_user_profile(sender, instance, **kwargs):
         pass
 
 
-# Signal to send email when order status changes
-@receiver(post_save, sender=Order)
-def order_status_changed(sender, instance, created, **kwargs):
-    """Send email notification when order status changes"""
-    if created:
-        # Order was just created - confirmation email sent during checkout
-        return
-    
-    # Try to get the old status from the database
-    try:
-        old_order = Order.objects.get(pk=instance.pk)
-        if old_order.status != instance.status:
-            # Status has changed - send email
-            from .email_utils import send_order_status_update_email
-            send_order_status_update_email(instance, old_order.status)
-    except Order.DoesNotExist:
-        pass
-
-
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     
@@ -327,3 +308,19 @@ class Review(models.Model):
 
     def __str__(self):
         return f"Review by {self.user.username} on {self.food.name} ({self.rating} stars)"
+
+
+@receiver(post_save, sender=Order)
+def order_status_changed(sender, instance, created, **kwargs):
+    """Send email notification when order status changes."""
+    if created:
+        return
+
+    try:
+        old_order = Order.objects.get(pk=instance.pk)
+        if old_order.status != instance.status:
+            from .email_utils import send_order_status_update_email
+
+            send_order_status_update_email(instance, old_order.status)
+    except Order.DoesNotExist:
+        pass

@@ -68,6 +68,10 @@ a:hover {
     color: var(--link-hover-color);
 }
 
+.dashboard #content > h1 {
+    display: none;
+}
+
 #container {
     min-width: 0;
 }
@@ -271,7 +275,7 @@ div.breadcrumbs a {
     justify-content: center;
     min-height: 46px;
     padding: 12px 18px;
-    text-decoration: none;
+    text-decoration: none !important;
 }
 
 .yaju-action-light,
@@ -302,7 +306,7 @@ div.breadcrumbs a {
     gap: 8px;
     min-height: 150px;
     padding: 22px;
-    text-decoration: none;
+    text-decoration: none !important;
     transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -337,6 +341,14 @@ div.breadcrumbs a {
 .yaju-stat-card strong {
     font-family: var(--yaju-heading);
     font-size: 23px;
+}
+
+.yaju-stat-card *,
+.yaju-action *,
+.yaju-model-name,
+.yaju-mini-action,
+.yaju-activity-item a {
+    text-decoration: none !important;
 }
 
 .yaju-dashboard-grid {

@@ -1,6 +1,8 @@
 {% extends "admin/base_site.html" %}
 {% load i18n %}
 
+{% block content_title %}{% endblock %}
+
 {% block content %}
 <div class="yaju-dashboard">
     <section class="yaju-dashboard-hero">
@@ -26,7 +28,7 @@
             <span class="yaju-stat-label">Fulfillment</span>
             <strong>Orders</strong>
         </a>
-        <a href="{% url 'admin_analytics' %}" class="yaju-stat-card">
+        <a href="{% url 'admin:kitchen_orderanalytics_changelist' %}" class="yaju-stat-card">
             <span class="yaju-stat-icon">AN</span>
             <span class="yaju-stat-label">Performance</span>
             <strong>Analytics</strong>
