@@ -11,6 +11,37 @@ from django.db import connection, OperationalError, ProgrammingError
 
 print("Starting migrations...")
 
+# First, try to manually add the new columns if they don't exist (for TiDB)
+try:
+    with connection.cursor() as cursor:
+        # Check if stock_quantity column exists
+        try:
+            cursor.execute("SHOW COLUMNS FROM kitchen_fooditem LIKE 'stock_quantity'")
+            if not cursor.fetchone():
+                # Column doesn't exist - add it
+                cursor.execute("ALTER TABLE kitchen_fooditem ADD COLUMN stock_quantity INTEGER UNSIGNED DEFAULT 0 NOT NULL")
+                print("Added stock_quantity column")
+        except (OperationalError, ProgrammingError):
+            pass
+            
+        try:
+            cursor.execute("SHOW COLUMNS FROM kitchen_fooditem LIKE 'low_stock_threshold'")
+            if not cursor.fetchone():
+                cursor.execute("ALTER TABLE kitchen_fooditem ADD COLUMN low_stock_threshold INTEGER UNSIGNED DEFAULT 10 NOT NULL")
+                print("Added low_stock_threshold column")
+        except (OperationalError, ProgrammingError):
+            pass
+            
+        try:
+            cursor.execute("SHOW COLUMNS FROM kitchen_fooditem LIKE 'track_stock'")
+            if not cursor.fetchone():
+                cursor.execute("ALTER TABLE kitchen_fooditem ADD COLUMN track_stock BOOL DEFAULT TRUE NOT NULL")
+                print("Added track_stock column")
+        except (OperationalError, ProgrammingError):
+            pass
+except Exception as e:
+    print(f"Warning checking/adding columns manually: {e}")
+
 # Try to check if 0001_initial is applied - make this very safe
 initial_applied = False
 try:
@@ -35,7 +66,14 @@ if not initial_applied:
     except Exception as e:
         print(f"Note: Could not fake initial migration (maybe it's already applied or tables don't exist): {e}")
 
-# Now run all migrations (this will apply 0002 and any others)
+# Now try to fake migration 0002 since we manually added the columns
+try:
+    call_command('migrate', '--fake', 'kitchen', '0002')
+    print("Faked kitchen 0002 successfully!")
+except Exception as e:
+    print(f"Note: Could not fake 0002: {e}")
+
+# Now run all migrations just to be safe
 print("Running all migrations...")
 try:
     call_command('migrate')
