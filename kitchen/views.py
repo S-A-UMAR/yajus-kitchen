@@ -24,7 +24,7 @@ from .email_utils import (
 
 from .models import (
     Category, FoodItem, OptionChoice, OptionGroup,
-    Cart, CartItem, Order, OrderItem, Payment, Review, Profile
+    Cart, CartItem, Order, OrderItem, Payment, Review
 )
 from .context_processors import get_or_create_cart
 
@@ -216,7 +216,16 @@ def checkout_view(request):
         messages.warning(request, "Your cart is empty!")
         return redirect('menu')
         
+    # Calculate total
+    total_price = 0
+    for item in cart.items.all():
+        base = item.food.base_price
+        for opt in item.selected_options.all():
+            base += opt.price_delta
+        total_price += base * item.quantity
+        
     if request.method == 'POST':
+        name = request.POST.get('name')
         email = request.POST.get('email')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
@@ -228,11 +237,6 @@ def checkout_view(request):
         user = None
         if request.user.is_authenticated:
             user = request.user
-            # Update user profile with phone and address
-            profile, _ = Profile.objects.get_or_create(user=user)
-            profile.phone = phone
-            profile.address = address
-            profile.save()
         elif create_account and email and password:
             # Register user
             if User.objects.filter(username=email).exists():
@@ -240,51 +244,36 @@ def checkout_view(request):
                 return redirect('checkout')
             
             user = User.objects.create_user(username=email, email=email, password=password)
-            profile, _ = Profile.objects.get_or_create(user=user)
-            profile.phone = phone
-            profile.address = address
-            profile.save()
             login(request, user)
             
         # Create Order
         order = Order.objects.create(
             user=user,
-            email=email or (user.email if user else ''),
-            phone=phone,
+            guest_name=name or '',
+            guest_email=email or (user.email if user else ''),
+            guest_phone=phone,
+            order_number=f"YJ{timezone.now().strftime('%Y%m%d%H%M%S')}",
+            total_amount=total_price,
             delivery_address=address,
-            total=cart.total_price,
-            is_guest=not (user or request.user.is_authenticated)
         )
         
         # Create OrderItems
         for cart_item in cart.items.all():
-            options_text_list = []
-            for opt in cart_item.selected_options.all():
-                if opt.price_delta > 0:
-                    options_text_list.append(f"{opt.name} (+₦{opt.price_delta})")
-                else:
-                    options_text_list.append(opt.name)
-            options_summary = ", ".join(options_text_list)
-            
             OrderItem.objects.create(
                 order=order,
                 food=cart_item.food,
                 food_name=cart_item.food.name,
+                food_price=cart_item.food.base_price,
                 quantity=cart_item.quantity,
-                unit_price=cart_item.unit_price,
-                options_summary=options_summary
             )
             
         # Redirect to payment setup page
         return redirect('payment_initialize', order_id=order.id)
         
-    # For GET requests, prefill profile if authenticated
+    # For GET requests, prefill if authenticated
     prefill = {}
     if request.user.is_authenticated:
         prefill['email'] = request.user.email
-        profile, _ = Profile.objects.get_or_create(user=request.user)
-        prefill['phone'] = profile.phone
-        prefill['address'] = profile.address
         
     return render(request, 'kitchen/checkout.html', {
         'prefill': prefill
@@ -303,17 +292,17 @@ def payment_initialize_view(request, order_id):
         return redirect('mock_checkout', order_id=order.id)
         
     # Calculate amount in Kobo
-    amount_kobo = int(order.total * 100)
+    amount_kobo = int(order.total_amount * 100)
     reference = f"YJ_{order.id}_{int(timezone.now().timestamp())}"
     
     # Create or update Payment
     Payment.objects.update_or_create(
         order=order,
         defaults={
-            'amount': order.total,
+            'amount': order.total_amount,
             'reference': reference,
             'status': 'pending',
-            'provider': 'Paystack'
+            'method': 'paystack'
         }
     )
     
@@ -514,12 +503,9 @@ def order_status_api(request, order_id):
 @login_required
 def dashboard_view(request):
     """
-    Customer dashboard displaying orders and profiles.
+    Customer dashboard displaying orders.
     """
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    
-    # Ensure user has a profile
-    Profile.objects.get_or_create(user=request.user)
     
     if request.method == 'POST':
         # Reorder previous order
@@ -537,13 +523,6 @@ def dashboard_view(request):
                         food=item.food,
                         quantity=item.quantity
                     )
-                    # Note: options snapshot is text, we can't fully rebuild choice models perfectly
-                    # but we look them up if their names match
-                    if item.options_summary:
-                        option_names = [opt.split(' (+')[0].strip() for opt in item.options_summary.split(',')]
-                        choices = OptionChoice.objects.filter(name__in=option_names)
-                        if choices.exists():
-                            cart_item.selected_options.set(choices)
             messages.success(request, f"Items from Order #{old_order.id} added to your cart!")
             return redirect('cart')
             
