@@ -11,27 +11,124 @@ from django.db import connection, OperationalError, ProgrammingError
 
 print("Starting migrations...")
 
-# Try to check if 0001_initial is applied - make this very safe
-initial_applied = False
+# Manually create kitchen_profile table if it doesn't exist!
 try:
     with connection.cursor() as cursor:
         try:
-            cursor.execute("SELECT name FROM django_migrations WHERE app='kitchen' AND name='0001_initial'")
-            if cursor.fetchone():
-                initial_applied = True
-        except (OperationalError, ProgrammingError):
-            initial_applied = False
+            cursor.execute("SHOW TABLES LIKE 'kitchen_profile'")
+            if not cursor.fetchone():
+                print("Creating kitchen_profile table...")
+                cursor.execute("""
+                    CREATE TABLE kitchen_profile (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        phone VARCHAR(15) DEFAULT '',
+                        address TEXT DEFAULT '',
+                        user_id BIGINT NOT NULL UNIQUE,
+                        CONSTRAINT kitchen_profile_user_id_fk FOREIGN KEY (user_id) REFERENCES auth_user (id)
+                    )
+                """)
+                print("Created kitchen_profile table!")
+        except (OperationalError, ProgrammingError) as e:
+            print(f"Warning creating profile table: {e}")
 except Exception as e:
-    print(f"Warning checking migration status: {e}")
-    initial_applied = False
+    print(f"Error checking profile table: {e}")
 
-if not initial_applied:
-    print("Attempting to fake kitchen 0001_initial migration...")
-    try:
-        call_command('migrate', '--fake', 'kitchen', '0001')
-        print("Faked kitchen 0001_initial successfully!")
-    except Exception as e:
-        print(f"Note: Could not fake initial migration: {e}")
+# Also check and create any other missing tables
+try:
+    with connection.cursor() as cursor:
+        # Check kitchen_order table (our current order model)
+        try:
+            cursor.execute("SHOW TABLES LIKE 'kitchen_order'")
+            if not cursor.fetchone():
+                print("Creating kitchen_order table...")
+                cursor.execute("""
+                    CREATE TABLE kitchen_order (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        order_number VARCHAR(20) UNIQUE,
+                        user_id BIGINT,
+                        guest_name VARCHAR(100) DEFAULT '',
+                        guest_email VARCHAR(254) DEFAULT '',
+                        guest_phone VARCHAR(20) DEFAULT '',
+                        total_amount DECIMAL(10,2),
+                        status VARCHAR(20),
+                        delivery_address TEXT,
+                        special_instructions TEXT,
+                        created_at DATETIME,
+                        updated_at DATETIME,
+                        CONSTRAINT kitchen_order_user_id_fk FOREIGN KEY (user_id) REFERENCES auth_user (id)
+                    )
+                """)
+                print("Created kitchen_order table!")
+        except (OperationalError, ProgrammingError):
+            pass
+        
+        try:
+            cursor.execute("SHOW TABLES LIKE 'kitchen_orderitem'")
+            if not cursor.fetchone():
+                print("Creating kitchen_orderitem table...")
+                cursor.execute("""
+                    CREATE TABLE kitchen_orderitem (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        order_id BIGINT NOT NULL,
+                        food_id BIGINT,
+                        food_name VARCHAR(150),
+                        food_price DECIMAL(10,2),
+                        quantity INT UNSIGNED NOT NULL,
+                        CONSTRAINT kitchen_orderitem_order_id_fk FOREIGN KEY (order_id) REFERENCES kitchen_order (id),
+                        CONSTRAINT kitchen_orderitem_food_id_fk FOREIGN KEY (food_id) REFERENCES kitchen_fooditem (id)
+                    )
+                """)
+                print("Created kitchen_orderitem table!")
+        except (OperationalError, ProgrammingError):
+            pass
+        
+        try:
+            cursor.execute("SHOW TABLES LIKE 'kitchen_payment'")
+            if not cursor.fetchone():
+                print("Creating kitchen_payment table...")
+                cursor.execute("""
+                    CREATE TABLE kitchen_payment (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        order_id BIGINT NOT NULL UNIQUE,
+                        reference VARCHAR(100) UNIQUE,
+                        amount DECIMAL(10,2),
+                        method VARCHAR(20),
+                        status VARCHAR(20),
+                        created_at DATETIME,
+                        CONSTRAINT kitchen_payment_order_id_fk FOREIGN KEY (order_id) REFERENCES kitchen_order (id)
+                    )
+                """)
+                print("Created kitchen_payment table!")
+        except (OperationalError, ProgrammingError):
+            pass
+        
+        try:
+            cursor.execute("SHOW TABLES LIKE 'kitchen_fooditemoption'")
+            if not cursor.fetchone():
+                print("Creating kitchen_fooditemoption table...")
+                cursor.execute("""
+                    CREATE TABLE kitchen_fooditemoption (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        food_id BIGINT NOT NULL,
+                        group_id BIGINT NOT NULL,
+                        UNIQUE KEY (food_id, group_id),
+                        CONSTRAINT kitchen_fooditemoption_food_id_fk FOREIGN KEY (food_id) REFERENCES kitchen_fooditem (id),
+                        CONSTRAINT kitchen_fooditemoption_group_id_fk FOREIGN KEY (group_id) REFERENCES kitchen_optiongroup (id)
+                    )
+                """)
+                print("Created kitchen_fooditemoption table!")
+        except (OperationalError, ProgrammingError):
+            pass
+            
+except Exception as e:
+    print(f"Error creating tables: {e}")
+
+# Now try to fake 0001
+try:
+    call_command('migrate', '--fake', 'kitchen', '0001')
+    print("Faked 0001 successfully!")
+except Exception as e:
+    print(f"Error faking 0001: {e}")
 
 print("Running all migrations...")
 try:
