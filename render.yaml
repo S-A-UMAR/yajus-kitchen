@@ -8,7 +8,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
-        value: "False"
+        value: "True"
       - key: ALLOWED_HOSTS
         value: ".onrender.com"
       - key: TIDB_HOST
