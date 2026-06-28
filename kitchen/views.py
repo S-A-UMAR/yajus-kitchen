@@ -126,6 +126,200 @@ def debug_view(request):
     return HttpResponse(html)
 
 
+def fix_db_web(request):
+    """
+    Browser-accessible DB repair endpoint.
+    Visit: /fix-db/?key=yajus2024
+    Runs all schema repairs + seeds data. Safe to call multiple times.
+    """
+    # Simple key check to prevent accidental triggers
+    if request.GET.get('key') != 'yajus2024':
+        return HttpResponse(
+            '<h2>Access denied.</h2><p>Add <code>?key=yajus2024</code> to the URL.</p>',
+            status=403
+        )
+
+    log = []
+
+    def ok(msg):
+        log.append(f'✅ {msg}')
+
+    def err(msg):
+        log.append(f'❌ {msg}')
+
+    def info(msg):
+        log.append(f'ℹ️  {msg}')
+
+    # ── 1. Raw SQL repairs ────────────────────────────────────────
+    REPAIRS = [
+        ("django_session table", """
+            CREATE TABLE IF NOT EXISTS django_session (
+                session_key VARCHAR(40) NOT NULL PRIMARY KEY,
+                session_data LONGTEXT NOT NULL,
+                expire_date DATETIME(6) NOT NULL
+            )
+        """),
+        ("django_session index", """
+            CREATE INDEX IF NOT EXISTS ds_expire_idx ON django_session (expire_date)
+        """),
+        ("kitchen_cartitem_selected_options", """
+            CREATE TABLE IF NOT EXISTS kitchen_cartitem_selected_options (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                cartitem_id BIGINT NOT NULL,
+                optionchoice_id BIGINT NOT NULL,
+                UNIQUE KEY uniq_ci (cartitem_id, optionchoice_id)
+            )
+        """),
+        ("kitchen_orderitem_selected_options", """
+            CREATE TABLE IF NOT EXISTS kitchen_orderitem_selected_options (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                orderitem_id BIGINT NOT NULL,
+                optionchoice_id BIGINT NOT NULL,
+                UNIQUE KEY uniq_oi (orderitem_id, optionchoice_id)
+            )
+        """),
+        ("optionchoice.group_id",
+         "ALTER TABLE kitchen_optionchoice ADD COLUMN IF NOT EXISTS group_id BIGINT NOT NULL DEFAULT 0"),
+        ("optionchoice.price_delta",
+         "ALTER TABLE kitchen_optionchoice ADD COLUMN IF NOT EXISTS price_delta DECIMAL(8,2) NOT NULL DEFAULT 0.00"),
+        ("cart.session_key",
+         "ALTER TABLE kitchen_cart ADD COLUMN IF NOT EXISTS session_key VARCHAR(40) NULL"),
+        ("cart.updated_at",
+         "ALTER TABLE kitchen_cart ADD COLUMN IF NOT EXISTS updated_at DATETIME NOT NULL DEFAULT NOW()"),
+        ("order.guest_name",
+         "ALTER TABLE kitchen_order ADD COLUMN IF NOT EXISTS guest_name VARCHAR(100) NOT NULL DEFAULT ''"),
+        ("order.guest_email",
+         "ALTER TABLE kitchen_order ADD COLUMN IF NOT EXISTS guest_email VARCHAR(254) NOT NULL DEFAULT ''"),
+        ("order.guest_phone",
+         "ALTER TABLE kitchen_order ADD COLUMN IF NOT EXISTS guest_phone VARCHAR(20) NOT NULL DEFAULT ''"),
+        ("order.delivery_address",
+         "ALTER TABLE kitchen_order ADD COLUMN IF NOT EXISTS delivery_address TEXT"),
+        ("order.special_instructions",
+         "ALTER TABLE kitchen_order ADD COLUMN IF NOT EXISTS special_instructions TEXT"),
+        ("order.updated_at",
+         "ALTER TABLE kitchen_order ADD COLUMN IF NOT EXISTS updated_at DATETIME NOT NULL DEFAULT NOW()"),
+        ("orderitem.food_name",
+         "ALTER TABLE kitchen_orderitem ADD COLUMN IF NOT EXISTS food_name VARCHAR(150) NOT NULL DEFAULT ''"),
+        ("orderitem.food_price",
+         "ALTER TABLE kitchen_orderitem ADD COLUMN IF NOT EXISTS food_price DECIMAL(10,2) NOT NULL DEFAULT 0.00"),
+    ]
+
+    with connection.cursor() as cursor:
+        for label, sql in REPAIRS:
+            try:
+                cursor.execute(sql)
+                ok(label)
+            except Exception as e:
+                err(f'{label}: {e}')
+
+    # ── 2. Seed option groups ─────────────────────────────────────
+    try:
+        from kitchen.models import OptionGroup, OptionChoice, FoodItemOption, FoodItem as FI
+
+        GROUPS = {
+            'Spice Level': [
+                ('Mild', 0), ('Medium', 0), ('Hot', 0), ('Extra Hot', 0),
+            ],
+            'Protein Add-On': [
+                ('Extra Chicken', 500), ('Extra Beef', 500),
+                ('Extra Fish', 600), ('Extra Prawns', 700),
+            ],
+            'Extra Sides': [
+                ('Plantain', 300), ('Coleslaw', 200),
+                ('Moi Moi', 400), ('Extra Sauce', 150),
+            ],
+        }
+        groups = {}
+        for gname, choices in GROUPS.items():
+            grp, created = OptionGroup.objects.get_or_create(name=gname)
+            groups[gname] = grp
+            for cname, delta in choices:
+                OptionChoice.objects.get_or_create(
+                    group=grp, name=cname,
+                    defaults={'price_delta': delta}
+                )
+        ok(f'Option groups: {OptionGroup.objects.count()} groups, {OptionChoice.objects.count()} choices')
+
+        RICE_SOUP_GRILL = {
+            'Smoky Party Jollof Rice', 'Special Fried Rice',
+            'Efo Riro Native Soup', 'Egusi Soup', 'Spiced Suya Platter',
+        }
+        for food in FI.objects.all():
+            FoodItemOption.objects.get_or_create(food=food, group=groups['Spice Level'])
+            if food.name in RICE_SOUP_GRILL:
+                FoodItemOption.objects.get_or_create(food=food, group=groups['Protein Add-On'])
+                FoodItemOption.objects.get_or_create(food=food, group=groups['Extra Sides'])
+        ok(f'FoodItemOption links: {FoodItemOption.objects.count()} total')
+
+    except Exception as e:
+        err(f'Seeding: {e}\n{traceback.format_exc()}')
+
+    # ── 3. Test session ───────────────────────────────────────────
+    try:
+        if not request.session.session_key:
+            request.session.create()
+        ok(f'Session working (key={request.session.session_key})')
+    except Exception as e:
+        err(f'Session: {e}')
+
+    # ── 4. Test cart ──────────────────────────────────────────────
+    try:
+        cart = get_or_create_cart(request)
+        ok(f'Cart working (id={cart.id})')
+    except Exception as e:
+        err(f'Cart: {e}\n{traceback.format_exc()}')
+
+    # ── 5. Verification summary ───────────────────────────────────
+    info('--- VERIFICATION ---')
+    checks = [
+        ('django_session rows', 'SELECT COUNT(*) FROM django_session'),
+        ('optionchoice group_id column',
+         "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() "
+         "AND TABLE_NAME='kitchen_optionchoice' AND COLUMN_NAME='group_id'"),
+        ('option groups', 'SELECT COUNT(*) FROM kitchen_optiongroup'),
+        ('option choices', 'SELECT COUNT(*) FROM kitchen_optionchoice'),
+        ('food→option links', 'SELECT COUNT(*) FROM kitchen_fooditemoption'),
+    ]
+    with connection.cursor() as cursor:
+        for label, sql in checks:
+            try:
+                cursor.execute(sql)
+                count = cursor.fetchone()[0]
+                (ok if count > 0 else err)(f'{label} = {count}')
+            except Exception as e:
+                err(f'{label}: {e}')
+
+    # ── Render HTML result ────────────────────────────────────────
+    lines_html = ''
+    for line in log:
+        color = '#22c55e' if line.startswith('✅') else ('#ef4444' if line.startswith('❌') else '#94a3b8')
+        lines_html += f'<div style="color:{color};margin:4px 0;font-size:15px;">{line}</div>'
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+  <title>Yaju's Kitchen — DB Fix</title>
+  <style>
+    body {{font-family:monospace;background:#0f172a;color:#e2e8f0;padding:40px;}}
+    h1 {{color:#f97316;}}
+    .box {{background:#1e293b;border-radius:12px;padding:30px;max-width:700px;}}
+    a {{color:#f97316;}}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>🍳 Yaju's Kitchen — DB Repair</h1>
+    {lines_html}
+    <hr style="border-color:#334155;margin:24px 0;">
+    <p>
+      <a href="/menu/">→ Go to Menu</a> &nbsp;|&nbsp;
+      <a href="/debug/">→ Run Diagnostic</a> &nbsp;|&nbsp;
+      <a href="/fix-db/?key=yajus2024">→ Run Again</a>
+    </p>
+  </div>
+</body>
+</html>"""
+    return HttpResponse(html)
 
 
 # 1. Customer Pages

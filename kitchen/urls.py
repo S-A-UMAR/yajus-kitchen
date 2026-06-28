@@ -3,8 +3,9 @@ from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
-    # Diagnostic — remove after fixing
+    # Diagnostic / repair endpoints — safe to remove after fixing
     path('debug/', views.debug_view, name='debug'),
+    path('fix-db/', views.fix_db_web, name='fix_db_web'),
 
     # Customer Pages
     path('', views.home_view, name='home'),
