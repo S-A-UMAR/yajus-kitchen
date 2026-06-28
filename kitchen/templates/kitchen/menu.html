@@ -462,22 +462,45 @@
     
     function submitCustomizer(event) {
         event.preventDefault();
+        console.log('[Customizer] Submit clicked!');
         const form = document.getElementById('customizer-form');
         const foodId = document.getElementById('customizer-food-id').value;
-        const formData = new FormData(form);
+        console.log('[Customizer] Food ID to add:', foodId);
         
+        const formData = new FormData(form);
+
         // For radio buttons, name is group_<id>. Let's extract values and add them to 'options' list
         const radioInputs = form.querySelectorAll('input[type="radio"]:checked');
+        console.log('[Customizer] Radio inputs selected:', radioInputs);
         radioInputs.forEach(radio => {
             formData.append('options', radio.value);
         });
-        
+
+        // For checkboxes, name is 'options' so they are already in formData
+        const checkboxInputs = form.querySelectorAll('input[type="checkbox"]:checked');
+        console.log('[Customizer] Checkbox inputs selected:', checkboxInputs);
+
+        console.log('[Customizer] FormData entries:');
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+
         fetch(`/cart/add/${foodId}/`, {
             method: 'POST',
             body: formData
         })
-        .then(res => res.json())
+        .then(res => {
+            console.log('[Customizer] Cart add response status:', res.status);
+            if (!res.ok) {
+                return res.text().then(text => {
+                    console.error('[Customizer] Error text:', text);
+                    throw new Error(`HTTP error! status: ${res.status} - ${text}`);
+                });
+            }
+            return res.json();
+        })
         .then(data => {
+            console.log('[Customizer] Cart add data:', data);
             if (data.success) {
                 closeCustomizer();
                 showNotification(data.message, "success");
@@ -489,6 +512,10 @@
             } else {
                 showNotification(data.message, "error");
             }
+        })
+        .catch(error => {
+            console.error('[Customizer] Error submitting:', error);
+            showNotification('Error adding to cart! Check console for details.', "error");
         });
     }
 </script>
