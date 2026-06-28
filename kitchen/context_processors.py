@@ -5,7 +5,13 @@ def get_or_create_cart(request):
     Helper to get the current cart from the session or authenticated user.
     """
     if request.user.is_authenticated:
-        cart, created = Cart.objects.get_or_create(user=request.user)
+        try:
+            cart = Cart.objects.get(user=request.user)
+        except Cart.DoesNotExist:
+            try:
+                cart = Cart.objects.create(user=request.user)
+            except Exception:
+                cart = Cart.objects.get(user=request.user)
         # If there's an existing guest cart in the session, we can merge it
         session_cart_id = request.session.get('cart_id')
         if session_cart_id:

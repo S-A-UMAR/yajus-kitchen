@@ -150,6 +150,25 @@ def fix_db_web(request):
     def info(msg):
         log.append(f'ℹ️  {msg}')
 
+    # Helpers to avoid Django's atomic get_or_create which uses SAVEPOINTs (problematic on TiDB)
+    def safe_get_or_create_group(name):
+        try:
+            return OptionGroup.objects.get(name=name), False
+        except OptionGroup.DoesNotExist:
+            return OptionGroup.objects.create(name=name), True
+
+    def safe_get_or_create_choice(group, name, delta):
+        try:
+            return OptionChoice.objects.get(group=group, name=name), False
+        except OptionChoice.DoesNotExist:
+            return OptionChoice.objects.create(group=group, name=name, price_delta=delta), True
+
+    def safe_get_or_create_food_option(food, group):
+        try:
+            return FoodItemOption.objects.get(food=food, group=group), False
+        except FoodItemOption.DoesNotExist:
+            return FoodItemOption.objects.create(food=food, group=group), True
+
     # ── 1. Raw SQL repairs ────────────────────────────────────────
     REPAIRS = [
         ("django_session table", """
@@ -204,13 +223,17 @@ def fix_db_web(request):
          "ALTER TABLE kitchen_orderitem ADD COLUMN IF NOT EXISTS food_price DECIMAL(10,2) NOT NULL DEFAULT 0.00"),
     ]
 
-    with connection.cursor() as cursor:
-        for label, sql in REPAIRS:
-            try:
-                cursor.execute(sql)
-                ok(label)
-            except Exception as e:
-                err(f'{label}: {e}')
+    try:
+        with connection.cursor() as cursor:
+            for label, sql in REPAIRS:
+                try:
+                    cursor.execute(sql)
+                    ok(label)
+                except Exception as e:
+                    err(f'{label}: {e}')
+    finally:
+        # Close connection to force a fresh connection for the ORM block
+        connection.close()
 
     # ── 2. Seed option groups ─────────────────────────────────────
     try:
@@ -231,13 +254,10 @@ def fix_db_web(request):
         }
         groups = {}
         for gname, choices in GROUPS.items():
-            grp, created = OptionGroup.objects.get_or_create(name=gname)
+            grp, _ = safe_get_or_create_group(gname)
             groups[gname] = grp
             for cname, delta in choices:
-                OptionChoice.objects.get_or_create(
-                    group=grp, name=cname,
-                    defaults={'price_delta': delta}
-                )
+                safe_get_or_create_choice(grp, cname, delta)
         ok(f'Option groups: {OptionGroup.objects.count()} groups, {OptionChoice.objects.count()} choices')
 
         RICE_SOUP_GRILL = {
@@ -245,14 +265,17 @@ def fix_db_web(request):
             'Efo Riro Native Soup', 'Egusi Soup', 'Spiced Suya Platter',
         }
         for food in FI.objects.all():
-            FoodItemOption.objects.get_or_create(food=food, group=groups['Spice Level'])
+            safe_get_or_create_food_option(food, groups['Spice Level'])
             if food.name in RICE_SOUP_GRILL:
-                FoodItemOption.objects.get_or_create(food=food, group=groups['Protein Add-On'])
-                FoodItemOption.objects.get_or_create(food=food, group=groups['Extra Sides'])
+                safe_get_or_create_food_option(food, groups['Protein Add-On'])
+                safe_get_or_create_food_option(food, groups['Extra Sides'])
         ok(f'FoodItemOption links: {FoodItemOption.objects.count()} total')
 
     except Exception as e:
         err(f'Seeding: {e}\n{traceback.format_exc()}')
+    finally:
+        # Close connection again before session operations
+        connection.close()
 
     # ── 3. Test session ───────────────────────────────────────────
     try:
@@ -261,6 +284,8 @@ def fix_db_web(request):
         ok(f'Session working (key={request.session.session_key})')
     except Exception as e:
         err(f'Session: {e}')
+    finally:
+        connection.close()
 
     # ── 4. Test cart ──────────────────────────────────────────────
     try:
@@ -268,6 +293,8 @@ def fix_db_web(request):
         ok(f'Cart working (id={cart.id})')
     except Exception as e:
         err(f'Cart: {e}\n{traceback.format_exc()}')
+    finally:
+        connection.close()
 
     # ── 5. Verification summary ───────────────────────────────────
     info('--- VERIFICATION ---')
@@ -280,14 +307,20 @@ def fix_db_web(request):
         ('option choices', 'SELECT COUNT(*) FROM kitchen_optionchoice'),
         ('food→option links', 'SELECT COUNT(*) FROM kitchen_fooditemoption'),
     ]
-    with connection.cursor() as cursor:
-        for label, sql in checks:
-            try:
-                cursor.execute(sql)
-                count = cursor.fetchone()[0]
-                (ok if count > 0 else err)(f'{label} = {count}')
-            except Exception as e:
-                err(f'{label}: {e}')
+    try:
+        with connection.cursor() as cursor:
+            for label, sql in checks:
+                try:
+                    cursor.execute(sql)
+                    count = cursor.fetchone()[0]
+                    (ok if count > 0 else err)(f'{label} = {count}')
+                except Exception as e:
+                    err(f'{label}: {e}')
+    except Exception as e:
+        err(f'Verification query: {e}')
+    finally:
+        connection.close()
+
 
     # ── Render HTML result ────────────────────────────────────────
     lines_html = ''
