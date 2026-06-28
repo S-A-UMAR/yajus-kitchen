@@ -440,9 +440,9 @@ def mock_checkout_view(request, order_id):
         payment, created = Payment.objects.get_or_create(
             order=order,
             defaults={
-                'amount': order.total,
+                'amount': order.total_amount,
                 'reference': reference,
-                'provider': 'Mock Payment'
+                'method': 'paystack'
             }
         )
         

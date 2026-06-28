@@ -345,7 +345,12 @@
         
         // Fetch food item options config JSON
         fetch(`/menu/item/${foodId}/`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+        })
         .then(data => {
             loader.style.display = 'none';
             body.style.display = 'block';
@@ -409,6 +414,10 @@
             });
             
             calculateCustomizerPrice();
+        })
+        .catch(error => {
+            console.error('Error loading customizer:', error);
+            loader.innerHTML = `<p style="color:var(--primary-red);">Error loading dish details. Please try again.</p>`;
         });
     }
     
