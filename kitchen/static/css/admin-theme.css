@@ -801,3 +801,22 @@ a.button {
         margin-left: 0;
     }
 }
+
+/* Hide dark mode toggle buttons */
+.theme-toggle {
+    display: none !important;
+}
+
+.theme-toggle__link {
+    display: none !important;
+}
+
+/* Also hide the Django default dark mode related elements */
+#header .theme-toggle {
+    display: none !important;
+}
+
+#header button.theme-toggle {
+    display: none !important;
+}
+
