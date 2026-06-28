@@ -71,33 +71,41 @@ def food_detail_view(request, food_id):
     """
     API view: Returns custom options for a FoodItem in JSON for the Customizer modal.
     """
-    food = get_object_or_404(FoodItem, id=food_id)
-    # Get associated option groups
-    groups = OptionGroup.objects.filter(fooditemoption__food=food).prefetch_related('choices')
-    
-    groups_data = []
-    for g in groups:
-        choices_data = []
-        for c in g.choices.all():
-            choices_data.append({
-                'id': c.id,
-                'name': c.name,
-                'price_delta': float(c.price_delta)
+    try:
+        food = get_object_or_404(FoodItem, id=food_id)
+        # Get associated option groups
+        groups = OptionGroup.objects.filter(fooditemoption__food=food).prefetch_related('choices')
+
+        groups_data = []
+        for g in groups:
+            choices_data = []
+            for c in g.choices.all():
+                choices_data.append({
+                    'id': c.id,
+                    'name': c.name,
+                    'price_delta': float(c.price_delta)
+                })
+            groups_data.append({
+                'id': g.id,
+                'name': g.name,
+                'choices': choices_data
             })
-        groups_data.append({
-            'id': g.id,
-            'name': g.name,
-            'choices': choices_data
+
+        return JsonResponse({
+            'id': food.id,
+            'name': food.name,
+            'base_price': float(food.base_price),
+            'description': food.description,
+            'image': food.display_image_url,
+            'groups': groups_data
         })
-        
-    return JsonResponse({
-        'id': food.id,
-        'name': food.name,
-        'base_price': float(food.base_price),
-        'description': food.description,
-        'image': food.display_image_url,
-        'groups': groups_data
-    })
+    except Exception as e:
+        import traceback
+        print(f"[food_detail_view ERROR] {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'error': str(e)
+        }, status=500)
 
 
 # 2. Cart Operations (Ajax & Normal Views)
