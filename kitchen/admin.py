@@ -42,9 +42,13 @@ class YajuKitchenAdminSite(admin.AdminSite):
 
         # Recent orders (last 7 days)
         seven_days_ago = timezone.now() - timedelta(days=7)
-        recent_orders = Order.objects.filter(created_at__gte=seven_days_ago).order_by("-created_at")[:10]
-        recent_orders_count = recent_orders.count()
-        recent_revenue = recent_orders.filter(status__in=["delivered", "received"]).aggregate(Sum("total_amount"))["total_amount__sum"] or 0
+        # First create the base queryset WITHOUT slicing
+        recent_orders_query = Order.objects.filter(created_at__gte=seven_days_ago)
+        # Now get the sliced queryset for display
+        recent_orders = recent_orders_query.order_by("-created_at")[:10]
+        # Use the base queryset for count and revenue calculations
+        recent_orders_count = recent_orders_query.count()
+        recent_revenue = recent_orders_query.filter(status__in=["delivered", "received"]).aggregate(Sum("total_amount"))["total_amount__sum"] or 0
 
         # Status breakdown
         status_counts = {}
