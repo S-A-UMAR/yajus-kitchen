@@ -1,359 +1,110 @@
 {% extends "admin/base_site.html" %}
-{% load i18n static %}
+{% load static %}
 
 {% block content_title %}{% endblock %}
 
-{% block extrastyle %}
-{{ block.super }}
-<style>
-    :root {
-        --primary-red: #B22222;
-        --secondary-orange: #F4A300;
-        --text-dark: #1F2937;
-        --bg-light: #FFF8F0;
-    }
-    
-    .analytics-container {
-        font-family: 'Inter', sans-serif;
-        color: var(--text-dark);
-        margin: 20px 0;
-    }
-    
-    /* Stats Cards */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-    
-    .stat-card {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0, 0, 0, 0.03);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        transition: transform 0.2s ease;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-2px);
-    }
-    
-    .stat-title {
-        font-size: 14px;
-        font-weight: 600;
-        text-transform: uppercase;
-        color: #6B7280;
-        letter-spacing: 0.05em;
-        margin-bottom: 8px;
-    }
-    
-    .stat-value {
-        font-size: 32px;
-        font-weight: 700;
-        color: var(--text-dark);
-        margin: 5px 0;
-    }
-    
-    .stat-subtitle {
-        font-size: 12px;
-        color: #9CA3AF;
-        margin-top: 5px;
-    }
-    
-    /* Charts Layout */
-    .charts-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-        gap: 24px;
-        margin-bottom: 30px;
-    }
-    
-    @media (max-width: 768px) {
-        .charts-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-    
-    .chart-box {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0, 0, 0, 0.03);
-    }
-    
-    .chart-header {
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--text-dark);
-        margin-bottom: 20px;
-        border-bottom: 1px solid #F3F4F6;
-        padding-bottom: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    
-    /* Tables Styling */
-    .table-box {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0, 0, 0, 0.03);
-        margin-bottom: 30px;
-    }
-    
-    .analytics-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-    }
-    
-    .analytics-table th {
-        text-align: left;
-        padding: 12px 16px;
-        background: #F9FAFB;
-        font-weight: 600;
-        font-size: 13px;
-        color: #374151;
-        border-bottom: 1px solid #E5E7EB;
-    }
-    
-    .analytics-table td {
-        padding: 14px 16px;
-        font-size: 14px;
-        border-bottom: 1px solid #F3F4F6;
-        color: #4B5563;
-    }
-    
-    .analytics-table tr:hover td {
-        background: #FFFBF7;
-    }
-    
-    .badge {
-        padding: 4px 8px;
-        border-radius: 9999px;
-        font-size: 11px;
-        font-weight: 600;
-        background: #FEF3C7;
-        color: #D97706;
-    }
-</style>
-<!-- Load Chart.js from CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- Load Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-{% endblock %}
-
 {% block content %}
-<div class="analytics-container">
-    
-    <!-- 1. Stats Overview -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div>
-                <div class="stat-title">Total Revenue</div>
-                <div class="stat-value">₦{{ total_revenue|floatformat:2 }}</div>
-            </div>
-            <div class="stat-subtitle">Lifetime earnings from successful sales</div>
+<div class="yaju-dashboard">
+    <section class="yaju-dashboard-hero">
+        <div>
+            <p class="yaju-eyebrow">Performance Overview</p>
+            <h1>{{ title }}</h1>
+            <p class="yaju-hero-copy">Real-time metrics, recent orders, and sales performance.</p>
         </div>
-        
-        <div class="stat-card">
-            <div>
-                <div class="stat-title">Total Orders</div>
-                <div class="stat-value">{{ order_count }}</div>
-            </div>
-            <div class="stat-subtitle">Volume of completed checkouts</div>
+        <div class="yaju-hero-actions">
+            <a href="{% url 'admin:index' %}" class="yaju-action yaju-action-light">Back to Dashboard</a>
+            <a href="{% url 'admin:kitchen_order_changelist' %}" class="yaju-action yaju-action-gold">View All Orders</a>
         </div>
-        
-        <div class="stat-card">
-            <div>
-                <div class="stat-title">Average Order Value (AOV)</div>
-                <div class="stat-value">₦{{ aov|floatformat:2 }}</div>
+    </section>
+
+    <!-- Stats Grid -->
+    <section class="yaju-quick-grid" aria-label="Analytics Stats">
+        <a class="yaju-stat-card">
+            <span class="yaju-stat-icon">₦</span>
+            <span class="yaju-stat-label">Total Revenue</span>
+            <strong>₦{{ total_revenue|default:"0.00" }}</strong>
+        </a>
+        <a class="yaju-stat-card">
+            <span class="yaju-stat-icon">📦</span>
+            <span class="yaju-stat-label">Total Orders</span>
+            <strong>{{ total_orders }}</strong>
+        </a>
+        <a class="yaju-stat-card">
+            <span class="yaju-stat-icon">👥</span>
+            <span class="yaju-stat-label">Total Users</span>
+            <strong>{{ total_users }}</strong>
+        </a>
+        <a class="yaju-stat-card">
+            <span class="yaju-stat-icon">📅</span>
+            <span class="yaju-stat-label">Recent (7d)</span>
+            <strong>{{ recent_orders_count }}</strong>
+        </a>
+    </section>
+
+    <div class="yaju-dashboard-grid">
+        <!-- Status Breakdown -->
+        <section class="yaju-panel">
+            <div class="yaju-section-heading">
+                <div>
+                    <p class="yaju-eyebrow">Orders Status</p>
+                    <h2>Current Order Status Breakdown</h2>
+                </div>
             </div>
-            <div class="stat-subtitle">Average spent per transaction</div>
-        </div>
+
+            <div style="display: grid; gap: 12px;">
+                {% for status, count in status_counts.items %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: {% if status == 'delivered' %}#dcfce7{% elif status == 'pending' %}#fef3c7{% else %}#fff4e6{% endif %}; border-radius: 12px;">
+                    <div>
+                        <div style="font-weight: 800; color: #1f2937;">{{ status|capfirst }}</div>
+                    </div>
+                    <div style="font-size: 22px; font-weight: 800; color: #8f1d1d;">{{ count }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Recent Orders -->
+        <aside class="yaju-panel">
+            <div class="yaju-section-heading">
+                <div>
+                    <p class="yaju-eyebrow">Last 7 Days</p>
+                    <h2>Recent Orders</h2>
+                </div>
+            </div>
+
+            {% if recent_orders %}
+            <div class="yaju-activity-list">
+                {% for order in recent_orders %}
+                <div class="yaju-activity-item" style="grid-template-columns: 1fr;">
+                    <div>
+                        <p style="font-size: 14px; margin: 0 0 2px;">
+                            <strong>Order #{{ order.id }}</strong>
+                            {% if order.user %}
+                            ({{ order.user.email }})
+                            {% else %}
+                            ({{ order.guest_email }})
+                            {% endif %}
+                        </p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 12px; color: var(--yaju-muted);">{{ order.created_at|date:"M j, H:i" }}</span>
+                            <span style="font-weight: 800; padding: 2px 8px; border-radius: 999px; font-size: 11px; text-transform: uppercase; background: {% if order.status == 'delivered' %}#dcfce7{% elif order.status == 'pending' %}#fef3c7{% else %}#fff4e6{% endif %}; color: {% if order.status == 'delivered' %}#166534{% else %}#7f1d1d{% endif %};">
+                                {{ order.status }}
+                            </span>
+                        </div>
+                        <div style="margin-top: 4px; font-weight: 800; color: #b22222;">₦{{ order.total_amount }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="yaju-empty-state yaju-empty-compact">
+                <h3>No Recent Orders</h3>
+                <p>No orders in the last 7 days.</p>
+            </div>
+            {% endif %}
+        </aside>
     </div>
-    
-    <!-- 2. Charts Grid -->
-    <div class="charts-grid">
-        <!-- Daily sales last 7 days -->
-        <div class="chart-box">
-            <div class="chart-header">
-                <span>Daily Sales Trends (Last 7 Days)</span>
-                <span class="badge">Sales Value</span>
-            </div>
-            <div style="height: 300px; position: relative;">
-                <canvas id="dailySalesChart"></canvas>
-            </div>
-        </div>
-        
-        <!-- Hourly sales peaks -->
-        <div class="chart-box">
-            <div class="chart-header">
-                <span>Hourly Sales Peaks</span>
-                <span class="badge">Hour Distribution</span>
-            </div>
-            <div style="height: 300px; position: relative;">
-                <canvas id="hourlySalesChart"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <div class="charts-grid">
-        <!-- Top Selling Foods Pie -->
-        <div class="chart-box">
-            <div class="chart-header">
-                <span>Top Selling Dishes</span>
-                <span class="badge">By Quantity</span>
-            </div>
-            <div style="height: 300px; position: relative; display: flex; justify-content: center;">
-                <canvas id="topFoodsChart" style="max-width: 300px;"></canvas>
-            </div>
-        </div>
-        
-        <!-- Top Food Table -->
-        <div class="table-box">
-            <div class="chart-header">
-                <span>Best Selling Items Details</span>
-            </div>
-            <table class="analytics-table">
-                <thead>
-                    <tr>
-                        <th>Dish Name</th>
-                        <th>Quantity Ordered</th>
-                        <th>Estimated Sales</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in top_foods %}
-                    <tr>
-                        <td style="font-weight: 600; color: var(--text-dark);">{{ item.food_name }}</td>
-                        <td>{{ item.total_qty }} units</td>
-                        <td style="font-weight: 600; color: #10B981;">₦{{ item.total_sales|floatformat:2 }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" style="text-align: center; color: #9CA3AF;">No data available yet. Build orders to populate dashboard!</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
 </div>
-
-<script>
-    // Extract labels and data passed from Django View
-    const dailyLabels = {{ daily_labels|safe }};
-    const dailySales = {{ daily_sales|safe }};
-    
-    const hourlyLabels = {{ hourly_labels|safe }};
-    const hourlySales = {{ hourly_sales|safe }};
-    
-    const topFoodsLabels = {{ top_foods_labels|safe }};
-    const topFoodsData = {{ top_foods_data|safe }};
-    
-    // 1. Daily Sales Chart
-    new Chart(document.getElementById('dailySalesChart'), {
-        type: 'bar',
-        data: {
-            labels: dailyLabels,
-            datasets: [{
-                label: 'Revenue (₦)',
-                data: dailySales,
-                backgroundColor: '#B22222',
-                borderRadius: 8,
-                borderWidth: 0,
-                maxBarThickness: 40
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#F3F4F6' },
-                    ticks: { callback: value => '₦' + value.toLocaleString() }
-                },
-                x: { grid: { display: false } }
-            }
-        }
-    });
-
-    // 2. Hourly Sales Chart
-    new Chart(document.getElementById('hourlySalesChart'), {
-        type: 'line',
-        data: {
-            labels: hourlyLabels,
-            datasets: [{
-                label: 'Hourly Sales (₦)',
-                data: hourlySales,
-                borderColor: '#F4A300',
-                backgroundColor: 'rgba(244, 163, 0, 0.1)',
-                tension: 0.4,
-                fill: true,
-                borderWidth: 3,
-                pointBackgroundColor: '#F4A300'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#F3F4F6' },
-                    ticks: { callback: value => '₦' + value.toLocaleString() }
-                },
-                x: { grid: { display: false } }
-            }
-        }
-    });
-
-    // 3. Top Foods Pie Chart
-    new Chart(document.getElementById('topFoodsChart'), {
-        type: 'doughnut',
-        data: {
-            labels: topFoodsLabels,
-            datasets: [{
-                data: topFoodsData,
-                backgroundColor: [
-                    '#B22222',
-                    '#F4A300',
-                    '#3B82F6',
-                    '#10B981',
-                    '#8B5CF6'
-                ],
-                borderWidth: 2,
-                borderColor: '#ffffff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { boxWidth: 12, font: { family: 'Inter' } }
-                }
-            },
-            cutout: '60%'
-        }
-    });
-</script>
 {% endblock %}
+
+{% block sidebar %}{% endblock %}
