@@ -109,6 +109,14 @@ class Cart(models.Model):
         identifier = self.user.username if self.user else f"Session {self.session_key[:8]}"
         return f"Cart for {identifier}"
 
+    @property
+    def total_price(self):
+        total = 0
+        if self.id:
+            for item in self.items.all():
+                total += item.total_price
+        return total
+
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
@@ -118,10 +126,27 @@ class CartItem(models.Model):
     added_at = models.DateTimeField(auto_now_add=True)
     
     def get_total_price(self):
-        base = self.food.base_price
+        base = Decimal(str(self.food.base_price))
         for opt in self.selected_options.all():
-            base += opt.price_delta
+            base += Decimal(str(opt.price_delta))
         return base * self.quantity
+
+    @property
+    def total_price(self):
+        return self.get_total_price()
+
+    @property
+    def unit_price(self):
+        base = Decimal(str(self.food.base_price))
+        for opt in self.selected_options.all():
+            base += Decimal(str(opt.price_delta))
+        return base
+
+    @property
+    def options_summary(self):
+        if not self.id:
+            return ""
+        return ", ".join(opt.name for opt in self.selected_options.all())
 
 
 class Order(models.Model):
@@ -150,6 +175,30 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.order_number}"
 
+    @property
+    def total(self):
+        return self.total_amount
+
+    @property
+    def email(self):
+        if self.guest_email:
+            return self.guest_email
+        if self.user and self.user.email:
+            return self.user.email
+        return ""
+
+    @property
+    def phone(self):
+        return self.guest_phone
+
+    @property
+    def name(self):
+        if self.guest_name:
+            return self.guest_name
+        if self.user:
+            return f"{self.user.first_name} {self.user.last_name}".strip() or self.user.username
+        return "Guest"
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
@@ -160,10 +209,27 @@ class OrderItem(models.Model):
     selected_options = models.ManyToManyField(OptionChoice, blank=True)
     
     def get_item_total(self):
-        base = self.food_price
+        base = Decimal(str(self.food_price))
         for opt in self.selected_options.all():
-            base += opt.price_delta
+            base += Decimal(str(opt.price_delta))
         return base * self.quantity
+
+    @property
+    def total_price(self):
+        return self.get_item_total()
+
+    @property
+    def unit_price(self):
+        base = Decimal(str(self.food_price))
+        for opt in self.selected_options.all():
+            base += Decimal(str(opt.price_delta))
+        return base
+
+    @property
+    def options_summary(self):
+        if not self.id:
+            return ""
+        return ", ".join(opt.name for opt in self.selected_options.all())
 
 
 class Payment(models.Model):
@@ -188,6 +254,10 @@ class Payment(models.Model):
     
     def __str__(self):
         return f"Payment {self.reference}"
+
+    @property
+    def provider(self):
+        return self.get_method_display()
 
 
 class Review(models.Model):

@@ -169,3 +169,8 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Yaju\'s Kitchen <nore
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'menu'
 LOGOUT_REDIRECT_URL = 'home'
+
+# Reverse Proxy SSL settings for Render
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True

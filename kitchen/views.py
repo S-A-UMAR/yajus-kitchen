@@ -5,7 +5,7 @@ import hashlib
 import csv
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.contrib.auth import login, authenticate
@@ -99,6 +99,8 @@ def food_detail_view(request, food_id):
             'image': food.display_image_url,
             'groups': groups_data
         })
+    except Http404:
+        raise
     except Exception as e:
         import traceback
         print(f"[food_detail_view ERROR] {str(e)}")
@@ -267,13 +269,15 @@ def checkout_view(request):
         
         # Create OrderItems
         for cart_item in cart.items.all():
-            OrderItem.objects.create(
+            order_item = OrderItem.objects.create(
                 order=order,
                 food=cart_item.food,
                 food_name=cart_item.food.name,
                 food_price=cart_item.food.base_price,
                 quantity=cart_item.quantity,
             )
+            if cart_item.selected_options.exists():
+                order_item.selected_options.set(cart_item.selected_options.all())
             
         # Redirect to payment setup page
         return redirect('payment_initialize', order_id=order.id)
@@ -531,6 +535,8 @@ def dashboard_view(request):
                         food=item.food,
                         quantity=item.quantity
                     )
+                    if item.selected_options.exists():
+                        cart_item.selected_options.set(item.selected_options.all())
             messages.success(request, f"Items from Order #{old_order.id} added to your cart!")
             return redirect('cart')
             
