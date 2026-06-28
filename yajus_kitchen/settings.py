@@ -9,9 +9,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fallback-secret-key-for-yajus-kitchen')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = [host.strip() for host in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host]
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,yajus-kitchen.onrender.com').split(',') if host]
 CSRF_TRUSTED_ORIGINS = ['https://' + host for host in ALLOWED_HOSTS] + ['http://' + host for host in ALLOWED_HOSTS]
 
 # Application definition
@@ -82,6 +82,7 @@ if TIDB_HOST and TIDB_USER and TIDB_PASSWORD and TIDB_DB_NAME:
             'PASSWORD': TIDB_PASSWORD,
             'HOST': TIDB_HOST,
             'PORT': os.environ.get('TIDB_PORT', '4000'),
+            'CONN_MAX_AGE': 600,  # Keep connection open for 10 minutes to avoid 5s SSL handshake delays
             'OPTIONS': {
                 'charset': 'utf8mb4',
                 'ssl': tidb_ssl_options,
