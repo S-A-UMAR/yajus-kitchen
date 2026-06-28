@@ -221,6 +221,26 @@ def fix_db_web(request):
          "ALTER TABLE kitchen_orderitem ADD COLUMN IF NOT EXISTS food_name VARCHAR(150) NOT NULL DEFAULT ''"),
         ("orderitem.food_price",
          "ALTER TABLE kitchen_orderitem ADD COLUMN IF NOT EXISTS food_price DECIMAL(10,2) NOT NULL DEFAULT 0.00"),
+        ("cartitem.added_at",
+         "ALTER TABLE kitchen_cartitem ADD COLUMN IF NOT EXISTS added_at DATETIME NOT NULL DEFAULT NOW()"),
+        ("cartitem.quantity",
+         "ALTER TABLE kitchen_cartitem ADD COLUMN IF NOT EXISTS quantity INT UNSIGNED NOT NULL DEFAULT 1"),
+        ("review.rating",
+         "ALTER TABLE kitchen_review ADD COLUMN IF NOT EXISTS rating INT UNSIGNED NOT NULL DEFAULT 5"),
+        ("review.comment",
+         "ALTER TABLE kitchen_review ADD COLUMN IF NOT EXISTS comment TEXT"),
+        ("review.created_at",
+         "ALTER TABLE kitchen_review ADD COLUMN IF NOT EXISTS created_at DATETIME NOT NULL DEFAULT NOW()"),
+        ("payment.reference",
+         "ALTER TABLE kitchen_payment ADD COLUMN IF NOT EXISTS reference VARCHAR(100) NOT NULL DEFAULT ''"),
+        ("payment.amount",
+         "ALTER TABLE kitchen_payment ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) NOT NULL DEFAULT 0.00"),
+        ("payment.method",
+         "ALTER TABLE kitchen_payment ADD COLUMN IF NOT EXISTS method VARCHAR(20) NOT NULL DEFAULT 'paystack'"),
+        ("payment.status",
+         "ALTER TABLE kitchen_payment ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'pending'"),
+        ("payment.created_at",
+         "ALTER TABLE kitchen_payment ADD COLUMN IF NOT EXISTS created_at DATETIME NOT NULL DEFAULT NOW()"),
     ]
 
     try:
@@ -303,6 +323,9 @@ def fix_db_web(request):
         ('optionchoice group_id column',
          "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() "
          "AND TABLE_NAME='kitchen_optionchoice' AND COLUMN_NAME='group_id'"),
+        ('cartitem added_at column',
+         "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() "
+         "AND TABLE_NAME='kitchen_cartitem' AND COLUMN_NAME='added_at'"),
         ('option groups', 'SELECT COUNT(*) FROM kitchen_optiongroup'),
         ('option choices', 'SELECT COUNT(*) FROM kitchen_optionchoice'),
         ('food→option links', 'SELECT COUNT(*) FROM kitchen_fooditemoption'),

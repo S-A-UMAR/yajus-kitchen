@@ -113,6 +113,58 @@ class Migration(migrations.Migration):
         ),
 
         # ---------------------------------------------------------------
+        # kitchen_cartitem — add added_at + quantity if missing
+        # ---------------------------------------------------------------
+        migrations.RunSQL(
+            sql="ALTER TABLE kitchen_cartitem ADD COLUMN IF NOT EXISTS added_at DATETIME NOT NULL DEFAULT NOW()",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE kitchen_cartitem ADD COLUMN IF NOT EXISTS quantity INT UNSIGNED NOT NULL DEFAULT 1",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+
+        # ---------------------------------------------------------------
+        # kitchen_review — add rating + comment + created_at if missing
+        # ---------------------------------------------------------------
+        migrations.RunSQL(
+            sql="ALTER TABLE kitchen_review ADD COLUMN IF NOT EXISTS rating INT UNSIGNED NOT NULL DEFAULT 5",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE kitchen_review ADD COLUMN IF NOT EXISTS comment TEXT",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE kitchen_review ADD COLUMN IF NOT EXISTS created_at DATETIME NOT NULL DEFAULT NOW()",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+
+        # ---------------------------------------------------------------
+        # kitchen_payment — add reference + amount + method + status + created_at if missing
+        # ---------------------------------------------------------------
+        migrations.RunSQL(
+            sql="ALTER TABLE kitchen_payment ADD COLUMN IF NOT EXISTS reference VARCHAR(100) NOT NULL DEFAULT ''",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE kitchen_payment ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) NOT NULL DEFAULT 0.00",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE kitchen_payment ADD COLUMN IF NOT EXISTS method VARCHAR(20) NOT NULL DEFAULT 'paystack'",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE kitchen_payment ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'pending'",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE kitchen_payment ADD COLUMN IF NOT EXISTS created_at DATETIME NOT NULL DEFAULT NOW()",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+
+        # ---------------------------------------------------------------
         # django_session — needed for guest/session-based carts
         # ---------------------------------------------------------------
         migrations.RunSQL(
