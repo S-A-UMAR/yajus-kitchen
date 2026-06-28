@@ -51,13 +51,13 @@ def menu_view(request):
     selected_category_id = request.GET.get('category')
     search_query = request.GET.get('search')
     
-    food_items = FoodItem.objects.filter(is_available=True).select_related('category')
+    food_items = FoodItem.objects.filter(is_available=True).select_related('category').distinct()
     
     if selected_category_id:
         food_items = food_items.filter(category_id=selected_category_id)
         
     if search_query:
-        food_items = food_items.filter(name__icontains=search_query)
+        food_items = food_items.filter(name__icontains=search_query).distinct()
         
     return render(request, 'kitchen/menu.html', {
         'categories': categories,
@@ -124,29 +124,31 @@ def cart_add_view(request, food_id):
     Add food item with customization options to the active cart.
     Accepts POST data with option choice IDs.
     """
-    if request.method == 'POST':
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
+
+    try:
         food = get_object_or_404(FoodItem, id=food_id)
         cart = get_or_create_cart(request)
-        
+
         # Get selected option IDs
         option_ids = request.POST.getlist('options')
-        qty = int(request.POST.get('quantity', 1))
-        
+        qty = max(1, int(request.POST.get('quantity', 1)))
+
         # Parse selected options
         choices = OptionChoice.objects.filter(id__in=option_ids)
-        
+
         # Find if same item with EXACTLY the same options already exists in cart
         cart_items = cart.items.filter(food=food)
         target_item = None
-        
+
         for item in cart_items:
-            # Get list of option IDs for this item
             item_opt_ids = set(item.selected_options.values_list('id', flat=True))
-            query_opt_ids = set(int(x) for x in option_ids)
+            query_opt_ids = set(int(x) for x in option_ids if x)
             if item_opt_ids == query_opt_ids:
                 target_item = item
                 break
-                
+
         if target_item:
             target_item.quantity += qty
             target_item.save()
@@ -154,14 +156,18 @@ def cart_add_view(request, food_id):
             target_item = CartItem.objects.create(cart=cart, food=food, quantity=qty)
             if choices.exists():
                 target_item.selected_options.set(choices)
-                
+
+        total_qty = sum(item.quantity for item in cart.items.all())
         return JsonResponse({
             'success': True,
             'message': f"Added {food.name} to cart!",
-            'total_qty': sum(item.quantity for item in cart.items.all())
+            'total_qty': total_qty
         })
-        
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
+    except Exception as e:
+        import traceback
+        print(f"[cart_add_view ERROR] {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
 def cart_update_view(request, item_id):
@@ -371,18 +377,18 @@ def payment_callback_view(request):
             # Complete payment
             payment.status = 'success'
             payment.save()
-            
-            order.status = 'received'
+
+            order.status = 'processing'
             order.save()
-            
+
             # Clear Cart
             cart = get_or_create_cart(request)
             cart.items.all().delete()
-            
+
             # Send confirmation emails
             send_order_confirmation_email(order)
             send_payment_confirmation_email(order)
-            
+
             messages.success(request, "Payment verified successfully!")
             return redirect('order_success', order_id=order.id)
         else:
@@ -415,7 +421,7 @@ def payment_webhook_view(request):
         body,
         hashlib.sha512
     ).hexdigest()
-    
+
     if not hmac.compare_digest(computed_signature, paystack_signature):
         return HttpResponseForbidden("Invalid signature")
         
@@ -461,15 +467,15 @@ def mock_checkout_view(request, order_id):
         if action == 'success':
             payment.status = 'success'
             payment.save()
-            
-            order.status = 'received'
+
+            order.status = 'processing'
             order.save()
-            
+
             # Clear Cart
             cart = get_or_create_cart(request)
             cart.items.all().delete()
-            
-            messages.success(request, "Mock payment approved! Order is now received.")
+
+            messages.success(request, "Mock payment approved! Order is now being prepared.")
             return redirect('order_success', order_id=order.id)
         else:
             payment.status = 'failed'

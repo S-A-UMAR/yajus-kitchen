@@ -252,10 +252,68 @@ try:
         if created:
             print(f"  ✓ Created food: {name}")
 
+    # -------------------------------------------------------
+    # Option Groups & Choices (toppings / spice levels)
+    # -------------------------------------------------------
+    from kitchen.models import OptionGroup, OptionChoice, FoodItemOption
+
+    option_groups_data = {
+        'Spice Level': [
+            ('Mild', 0.00),
+            ('Medium', 0.00),
+            ('Hot', 0.00),
+            ('Extra Hot', 0.00),
+        ],
+        'Protein Add-On': [
+            ('Extra Chicken', 500.00),
+            ('Extra Beef', 500.00),
+            ('Extra Fish', 600.00),
+            ('Extra Prawns', 700.00),
+        ],
+        'Extra Sides': [
+            ('Plantain', 300.00),
+            ('Coleslaw', 200.00),
+            ('Moi Moi', 400.00),
+            ('Extra Sauce', 150.00),
+        ],
+    }
+
+    groups = {}
+    for group_name, choices in option_groups_data.items():
+        grp, created = OptionGroup.objects.get_or_create(name=group_name)
+        groups[group_name] = grp
+        if created:
+            print(f"  ✓ Created option group: {group_name}")
+        for choice_name, delta in choices:
+            OptionChoice.objects.get_or_create(
+                group=grp,
+                name=choice_name,
+                defaults={'price_delta': delta}
+            )
+
+    # Attach option groups to food items
+    # (Spice Level → all items; Protein Add-On + Extra Sides → rice/soups/grills)
+    all_foods = FoodItem.objects.all()
+    rice_soup_grill_names = {
+        'Smoky Party Jollof Rice', 'Special Fried Rice',
+        'Efo Riro Native Soup', 'Egusi Soup', 'Spiced Suya Platter'
+    }
+
+    for food in all_foods:
+        # Spice Level for every food
+        FoodItemOption.objects.get_or_create(food=food, group=groups['Spice Level'])
+        # Protein + Sides for rice/soup/grill items
+        if food.name in rice_soup_grill_names:
+            FoodItemOption.objects.get_or_create(food=food, group=groups['Protein Add-On'])
+            FoodItemOption.objects.get_or_create(food=food, group=groups['Extra Sides'])
+
+    print("  ✓ Option groups and choices seeded.")
     print("  Seeding complete.")
 
 except Exception as e:
+    import traceback
     print(f"  ! Seeding error: {e}")
+    print(traceback.format_exc())
 
 print("\n" + "=" * 60)
 print("BUILD SCRIPT COMPLETE")

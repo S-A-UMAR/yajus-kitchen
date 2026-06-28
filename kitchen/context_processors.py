@@ -54,8 +54,9 @@ def cart_processor(request):
     """
     Exposes the active cart and its items to all templates.
     """
-    # Exclude admin and auth pages from running database checks to reduce overhead
-    if request.path.startswith('/admin/') or request.path.startswith('/accounts/'):
+    # Exclude system paths to avoid DB overhead and prevent crashes during admin use
+    skip_prefixes = ('/admin/', '/accounts/', '/static/', '/media/')
+    if any(request.path.startswith(p) for p in skip_prefixes):
         return {}
         
     try:
