@@ -3,6 +3,9 @@ from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
+    # Diagnostic — remove after fixing
+    path('debug/', views.debug_view, name='debug'),
+
     # Customer Pages
     path('', views.home_view, name='home'),
     path('menu/', views.menu_view, name='menu'),

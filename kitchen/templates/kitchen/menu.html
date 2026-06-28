@@ -460,63 +460,71 @@
         document.getElementById('customizer-total-price-display').innerText = '₦' + finalPrice.toFixed(2);
     }
     
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
     function submitCustomizer(event) {
         event.preventDefault();
-        console.log('[Customizer] Submit clicked!');
         const form = document.getElementById('customizer-form');
         const foodId = document.getElementById('customizer-food-id').value;
-        console.log('[Customizer] Food ID to add:', foodId);
-        
+        if (!foodId) {
+            showNotification('No food item selected.', 'error');
+            return;
+        }
+
         const formData = new FormData(form);
 
-        // For radio buttons, name is group_<id>. Let's extract values and add them to 'options' list
-        const radioInputs = form.querySelectorAll('input[type="radio"]:checked');
-        console.log('[Customizer] Radio inputs selected:', radioInputs);
-        radioInputs.forEach(radio => {
+        // Collect radio inputs (spice/single-select) as 'options'
+        form.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
             formData.append('options', radio.value);
         });
 
-        // For checkboxes, name is 'options' so they are already in formData
-        const checkboxInputs = form.querySelectorAll('input[type="checkbox"]:checked');
-        console.log('[Customizer] Checkbox inputs selected:', checkboxInputs);
-
-        console.log('[Customizer] FormData entries:');
-        for (let [key, value] of formData.entries()) {
-            console.log(key, value);
-        }
+        const csrfToken = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         fetch(`/cart/add/${foodId}/`, {
             method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
             body: formData
         })
         .then(res => {
-            console.log('[Customizer] Cart add response status:', res.status);
-            if (!res.ok) {
-                return res.text().then(text => {
-                    console.error('[Customizer] Error text:', text);
-                    throw new Error(`HTTP error! status: ${res.status} - ${text}`);
-                });
-            }
-            return res.json();
+            // Try to parse JSON regardless of status
+            return res.text().then(text => {
+                let data;
+                try { data = JSON.parse(text); } catch(e) { data = null; }
+                return { ok: res.ok, status: res.status, data, text };
+            });
         })
-        .then(data => {
-            console.log('[Customizer] Cart add data:', data);
-            if (data.success) {
+        .then(({ ok, status, data, text }) => {
+            if (ok && data && data.success) {
                 closeCustomizer();
-                showNotification(data.message, "success");
-                // Update navigation cart counts
+                showNotification(data.message || 'Added to cart!', 'success');
                 document.getElementById('global-cart-count').innerText = data.total_qty;
-                // Reload cart drawer and slide it open (UX WOW factor)
                 refreshDrawerContent();
                 setTimeout(() => toggleCartDrawer(true), 200);
             } else {
-                showNotification(data.message, "error");
+                // Show the REAL error from the server
+                const msg = (data && data.message) || text || `Server error (${status})`;
+                console.error('[Cart Error]', msg);
+                showNotification('Cart error: ' + msg, 'error');
             }
         })
         .catch(error => {
-            console.error('[Customizer] Error submitting:', error);
-            showNotification('Error adding to cart! Check console for details.', "error");
+            console.error('[Cart Error]', error);
+            showNotification('Network error: ' + error.message, 'error');
         });
     }
 </script>
 {% endblock %}
+

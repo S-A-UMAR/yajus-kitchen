@@ -3,6 +3,7 @@ import json
 import hmac
 import hashlib
 import csv
+import traceback
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse, HttpResponseForbidden, Http404
@@ -12,6 +13,7 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db import connection
 from django.db.models import Sum, Count
 from django.utils import timezone
 from django.conf import settings
@@ -27,6 +29,103 @@ from .models import (
     Cart, CartItem, Order, OrderItem, Payment, Review
 )
 from .context_processors import get_or_create_cart
+
+
+# ── Debug / Diagnostic View ─────────────────────────────────────────────────
+
+def debug_view(request):
+    """
+    Diagnostic endpoint — shows real DB/session errors.
+    Visit /debug/ to see what is broken.
+    """
+    results = {}
+
+    # 1. Check DB connection
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        results['db_connection'] = 'OK'
+    except Exception as e:
+        results['db_connection'] = f'ERROR: {e}'
+
+    # 2. Check critical tables
+    tables_to_check = [
+        'django_session',
+        'kitchen_cart',
+        'kitchen_cartitem',
+        'kitchen_cartitem_selected_options',
+        'kitchen_orderitem_selected_options',
+        'kitchen_optiongroup',
+        'kitchen_optionchoice',
+        'kitchen_fooditemoption',
+    ]
+    table_status = {}
+    for table in tables_to_check:
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(f"SELECT COUNT(*) FROM `{table}`")
+                count = cursor.fetchone()[0]
+                table_status[table] = f'EXISTS ({count} rows)'
+        except Exception as e:
+            table_status[table] = f'MISSING or ERROR: {e}'
+    results['tables'] = table_status
+
+    # 3. Check critical columns
+    columns_to_check = [
+        ('kitchen_optionchoice', 'group_id'),
+        ('kitchen_optionchoice', 'price_delta'),
+        ('kitchen_cart', 'session_key'),
+        ('kitchen_order', 'guest_email'),
+        ('kitchen_orderitem', 'food_name'),
+    ]
+    column_status = {}
+    for table, col in columns_to_check:
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT COUNT(*) FROM information_schema.COLUMNS "
+                    "WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s AND COLUMN_NAME=%s",
+                    [table, col]
+                )
+                exists = cursor.fetchone()[0] > 0
+                column_status[f'{table}.{col}'] = 'OK' if exists else 'MISSING'
+        except Exception as e:
+            column_status[f'{table}.{col}'] = f'ERROR: {e}'
+    results['columns'] = column_status
+
+    # 4. Test session creation
+    try:
+        if not request.session.session_key:
+            request.session.create()
+        results['session'] = f'OK (key={request.session.session_key})'
+    except Exception as e:
+        results['session'] = f'ERROR: {e}\n{traceback.format_exc()}'
+
+    # 5. Test cart creation
+    try:
+        cart = get_or_create_cart(request)
+        results['cart'] = f'OK (cart id={cart.id})'
+    except Exception as e:
+        results['cart'] = f'ERROR: {e}\n{traceback.format_exc()}'
+
+    # 6. Option groups
+    try:
+        og_count = OptionGroup.objects.count()
+        oc_count = OptionChoice.objects.count()
+        results['option_groups'] = f'{og_count} groups, {oc_count} choices'
+    except Exception as e:
+        results['option_groups'] = f'ERROR: {e}'
+
+    import json as json_lib
+    html = '<html><body><pre style="font-family:monospace;font-size:14px;">'
+    html += 'YAJU\'S KITCHEN — DATABASE DIAGNOSTIC\n'
+    html += '=' * 60 + '\n'
+    html += json_lib.dumps(results, indent=2)
+    html += '\n' + '=' * 60
+    html += '</pre></body></html>'
+    return HttpResponse(html)
+
+
 
 
 # 1. Customer Pages

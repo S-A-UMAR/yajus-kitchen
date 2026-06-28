@@ -178,26 +178,31 @@ print("  Base table check complete.")
 # ---------------------------------------------------------------------------
 print("\n[2/3] Running Django migrations...")
 
-# Fake initial migration (tables already exist)
+# Step A: Run all non-kitchen framework migrations first (creates django_session, auth tables, etc.)
 try:
-    call_command('migrate', '--fake', 'kitchen', '0001', verbosity=1)
+    # Exclude kitchen since we'll handle it separately
+    for app in ['contenttypes', 'auth', 'sessions', 'admin', 'messages']:
+        try:
+            call_command('migrate', app, verbosity=0)
+        except Exception as ae:
+            print(f"  ! {app} migrate: {ae}")
+    print("  ✓ Framework migrations applied (sessions, auth, admin)")
+except Exception as e:
+    print(f"  ! Framework migrations failed: {e}")
+
+# Step B: Fake kitchen 0001 (tables already created by raw SQL above)
+try:
+    call_command('migrate', '--fake', 'kitchen', '0001', verbosity=0)
     print("  ✓ Faked kitchen 0001_initial")
 except Exception as e:
     print(f"  ! Fake 0001 (may already be applied): {e}")
 
-# Apply schema repair migration (0002) — this does the ALTER TABLE fixes
+# Step C: Apply kitchen 0002+ (ALTER TABLE repairs)
 try:
     call_command('migrate', 'kitchen', verbosity=1)
-    print("  ✓ Applied remaining kitchen migrations (0002+)")
+    print("  ✓ Applied kitchen migrations (0002+)")
 except Exception as e:
     print(f"  ! kitchen migrations failed: {e}")
-
-# Apply auth/admin/contenttypes/session migrations
-try:
-    call_command('migrate', '--run-syncdb', verbosity=1)
-    print("  ✓ Applied all framework migrations")
-except Exception as e:
-    print(f"  ! Framework migrations failed: {e}")
 
 print("  Migrations complete.")
 
